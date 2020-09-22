@@ -1,0 +1,23 @@
+.textarea_size{
+	resize: vertical;
+	max-height: 250px;
+}
+.border-box{
+	border-style: solid; 
+	border-width: 0.5px; 
+	margin-left: 10px;
+	height: auto ; 
+}
+.ajuste-h {
+	display:flex;
+	margin: 0 auto;
+}
+.border-table>table,
+.border-table>thead>tr>th, 
+.border-table>tbody>tr>th, 
+.border-table>tfoot>tr>th, 
+.border-table>thead>tr>td, 
+.border-table>tbody>tr>td, 
+.border-table>tfoot>tr>td{
+	border: 1px solid #101010;
+}
