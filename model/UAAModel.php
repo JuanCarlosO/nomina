@@ -1152,6 +1152,72 @@ class UAAModel extends Connection
 			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
 		}
 	}
+	public function savePago()
+	{
+		try {
+			#print_r($_POST);exit;
+			$num_quincena	= (!empty($_POST['num_quincena'])) ? mb_strtoupper($_POST['num_quincena']) : NULL ;	
+			$sp_id	= (!empty($_POST['sp_id'])) ? mb_strtoupper($_POST['sp_id']) : NULL ;	
+			$year = date('Y');
+			#$t_concepto	= (!empty($_POST['t_concepto'])) ? mb_strtoupper($_POST['t_concepto']) : NULL ;	
+			$this->sql = "INSERT INTO percepciones_sp(
+			    id,
+			    percepcion_id,
+			    personal_id,
+			    importe,
+			    quincena,
+			    year			    
+			) VALUES (
+				'',
+				:concepto,
+				:personal_id,
+				:importe,
+				:quincena,
+				:year
+			);
+			";
+			for ($i=0; $i < count($_POST['percepciones']) ; $i++) { 
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':concepto',$_POST['percepciones'][$i],PDO::PARAM_INT);
+				$this->stmt->bindParam(':personal_id',$sp_id,PDO::PARAM_INT);
+				$this->stmt->bindParam(':importe',$_POST['per_monto'][$i],PDO::PARAM_STR);
+				$this->stmt->bindParam(':quincena',$num_quincena,PDO::PARAM_INT);
+				$this->stmt->bindParam(':year',$year,PDO::PARAM_INT);
+				$this->stmt->execute();
+			}
+			$this->sql = "INSERT INTO deducciones_sp(
+			    id,
+			    deduccion_id,
+			    personal_id,
+			    importe,
+			    quincena,
+			    year			    
+			) VALUES (
+				'',
+				:concepto,
+				:personal_id,
+				:importe,
+				:quincena,
+				:year
+			);
+			";
+			for ($i=0; $i < count($_POST['deducciones']) ; $i++) { 
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':concepto',$_POST['deducciones'][$i],PDO::PARAM_INT);
+				$this->stmt->bindParam(':personal_id',$sp_id,PDO::PARAM_INT);
+				$this->stmt->bindParam(':importe',$_POST['ded_monto'][$i],PDO::PARAM_STR);
+				$this->stmt->bindParam(':quincena',$num_quincena,PDO::PARAM_INT);
+				$this->stmt->bindParam(':year',$year,PDO::PARAM_INT);
+				$this->stmt->execute();
+			}
+			
+			$alerta = array( 'status'=>'success','message'=>'LOS DATOS DEL PAGO HAN SIDO GUARDADOS DE MANERA EXITOSA.' );
+			return json_encode( $alerta );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	
 	public function getNamePD($pd=null)#Recuperar el nombre de la percepcion o deduccion
 	{
 		try {

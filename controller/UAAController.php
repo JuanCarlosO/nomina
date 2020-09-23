@@ -74,6 +74,10 @@ class UAAController
 	{
 		return $this->model->saveRegla();
 	}
+	public function savePago()
+	{
+		return $this->model->savePago();
+	}
 	
 }
 ?>

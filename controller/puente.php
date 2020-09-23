@@ -67,6 +67,9 @@ if ( isset($_POST['option']) ) {
 		case '12':
 			echo $uaa->saveRegla();
 			break;	
+		case '13':
+			echo $uaa->savePago();
+			break;	
 					
 		default:
 			echo json_encode(array( 'status'=>'error','message'=>'NO SE A DEFINIDO LA OPCIÓN DEL MÉTODO A LA QUE DESEA ACCEDER SU FORMULARIO <br> INFORME ESTE PROBLEMA A DESARROLLO DE SISTEMAS (ext: 129).' ));

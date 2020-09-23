@@ -11,6 +11,7 @@ for ($i=0; $i < count($_POST['criterio_per']); $i++) {
 for ($i=0; $i < count($_POST['criterio_ded']); $i++) { 
     $names_ded[$i] = $uaa->getNamePD($_POST['criterio_ded'][$i]);
 }
+
 $sumaA = 0; $per = "";
 for ($i=0; $i <  count($names_per); $i++) { 
     $sumaA += (float) $_POST['per_monto'][$i];
@@ -29,8 +30,22 @@ for ($i=0; $i <  count($names_ded); $i++) {
     $ded .=     '<td>'.$_POST['ded_monto'][$i] .'</td>';
     $ded .=  '</tr>';
 }
+
+#las per o ded extras 
+for ($i=0; $i < count($_POST['t_per_ded']); $i++) { 
+    if ( $_POST['t_per_ded'][$i] == 1 ) {
+        $sumaA = $sumaA + ((float)$_POST['monto'][$i]); 
+    }elseif ( $_POST['t_per_ded'][$i] == 1 ) {
+        $sumaB = $sumaB + ((float)$_POST['monto'][$i]); 
+    }
+    $names_pd[$i] = $uaa->getNamePD($_POST['criterio_e'][$i]);
+}
 $tot = $sumaA - $sumaB;
-#print_r($names_ded);
+#integrar las percepciones y las deducciones
+$percepciones = array();
+$deducciones = array();
+
+#print_r($tot);
 ?>
 <section class="content container-fluid">
     <div class="row">
@@ -56,7 +71,15 @@ $tot = $sumaA - $sumaB;
                     <div class="row">
                         <div class="col-md-12">
                             <h3 style="letter-spacing: 12pt;word-spacing: 5pt;"> <center><?=$_POST['name_sp'] ?></center> </h3>
-                            <input type="hidden" name="<?=$_POST['sp_id']?>">
+                        </div>
+                    </div>
+                    <div id="alerta_pagar"></div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <b>
+                                EL PAGO SERA APLICADO A LA QUINCENA: 
+                                <big><?=$_POST['name_quincena'];?></big>
+                            </b>
                         </div>
                     </div>
                     <div class="row">
@@ -68,13 +91,23 @@ $tot = $sumaA - $sumaB;
                                         <th class="text-center">Clave</th>
                                         <th class="text-center">Nombre de percepción</th>
                                         <th class="text-center">Importe</th>
-                                        <th class="text-center"> <i class="fa fa-trash text-red"></i> </th>
+                                        <!-- <th class="text-center"> <i class="fa fa-trash text-red"></i> </th> -->
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php 
                                     echo $per; 
+                                    for ($i=0; $i < count($_POST['t_per_ded']) ; $i++) { 
+                                        if ($_POST['t_per_ded'][$i] == 1) {
+                                            echo  '<tr>';
+                                            echo     '<td>'.$names_pd[$i]->cve_int .'</td>';
+                                            echo     '<td>'.$names_pd[$i]->nombre  .'</td>';
+                                            echo     '<td>'.$_POST['monto'][$i] .'</td>';
+                                            echo  '</tr>';
+                                        }
+                                    }
                                     ?>
+
                                     <tr>
                                         <td colspan="2" class="text-right"> <b>SUMA DE PERCEPCIONES:</b> </td>
                                         <td> <b><?=$sumaA;?></b> </td>
@@ -91,12 +124,21 @@ $tot = $sumaA - $sumaB;
                                            <th class="text-center">Clave</th>
                                            <th class="text-center">Nombre de percepción</th>
                                            <th class="text-center">Importe</th>
-                                           <th class="text-center"> <i class="fa fa-trash text-red"></i> </th>
+                                           <!-- <th class="text-center"> <i class="fa fa-trash text-red"></i> </th> -->
                                        </tr>
                                     </thead>
                                     <tbody>
                                     <?php 
                                     echo $ded;
+                                    for ($i=0; $i < count($_POST['t_per_ded']) ; $i++) { 
+                                        if ($_POST['t_per_ded'][$i] == 2) {
+                                            echo  '<tr>';
+                                            echo     '<td>'.$names_ded[$i]->cve_int .'</td>';
+                                            echo     '<td>'.$names_ded[$i]->nombre  .'</td>';
+                                            echo     '<td>'.$_POST['monto'][$i] .'</td>';
+                                            echo  '</tr>';
+                                        }
+                                    }
                                     ?>
                                     <tr>
                                         <td colspan="2" class="text-right"> <b>SUMA DE DEDUCCIONES:</b> </td>
@@ -108,15 +150,54 @@ $tot = $sumaA - $sumaB;
                             </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-4"></div>
-                        <div class="col-md-4">
-                            <button class="btn btn-success btn-flat btn-block">
-                                <i class="fa fa-money"></i> Guardar pago
-                            </button>
+                    <form action="#" method="post" id="frm_realiza_pago">
+                        <input type="hidden" name="option" value="13">
+                        <input type="hidden" name="num_quincena" value="<?=$_POST['num_quincena']?>">
+                        <input type="hidden" name="sp_id" value="<?=$_POST['sp_id']?>">
+                        <?php
+                        $per_list = array();
+                        $ded_list = array();
+                        for ($i=0; $i < count($_POST['criterio_per']); $i++) { 
+                            $aux['criterio'] = $_POST['criterio_per'][$i];
+                            $aux['monto'] = $_POST['per_monto'][$i];
+                            array_push($per_list, $aux) ;
+                        }
+                        for ($i=0; $i < count($_POST['criterio_ded']); $i++) { 
+                            $aux['criterio'] = $_POST['criterio_ded'][$i];
+                            $aux['monto'] = $_POST['ded_monto'][$i];
+                            array_push($ded_list, $aux) ;
+                        }
+                        for ($i=0; $i < count($_POST['criterio_e']); $i++) { 
+                            $aux['criterio'] = $_POST['criterio_e'][$i];
+                            $aux['monto'] = $_POST['monto'][$i];
+                            if ($_POST['t_per_ded'][$i] == '1') {
+                                array_push($per_list, $aux) ;
+                            }else{
+                                array_push($ded_list, $aux) ;
+                            }
+                        }
+                        for ($i=0; $i < count($per_list); $i++) { 
+                            echo '<input type="hidden" name="percepciones[]" value="'.$per_list[$i]['criterio'].'">';
+                            echo '<input type="hidden" name="per_monto[]" value="'.$per_list[$i]['monto'].'">';
+                        }
+                        for ($i=0; $i < count($ded_list); $i++) { 
+                            echo '<input type="hidden" name="deducciones[]" value="'.$ded_list[$i]['criterio'].'">';
+                            echo '<input type="hidden" name="ded_monto[]" value="'.$ded_list[$i]['monto'].'">';
+                        }
+                        ?>
+                        <!-- <code>
+                            <pre><?php print_r($ded_list) ?></pre>
+                        </code> -->
+                        <div class="row">
+                            <div class="col-md-4"></div>
+                            <div class="col-md-4">
+                                <button class="btn btn-success btn-flat btn-block">
+                                    <i class="fa fa-money"></i> Guardar pago
+                                </button>
+                            </div>
+                            <div class="col-md-4"></div>
                         </div>
-                        <div class="col-md-4"></div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>

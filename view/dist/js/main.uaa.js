@@ -116,6 +116,11 @@ function getURL(url) {
 		autompletado_sustituido();
 		load_catalogo('quincena_pension','c_quincenas','select','');	
 	}
+	if ( url == '?menu=validar_pagar' ) {
+		$('#option_3').addClass('active');		
+		$('#option_3_1 ').addClass('active');
+		form_smart('frm_realiza_pago',false,false,'alerta_pagar');
+	}
 	
 	return false;
 }
@@ -319,7 +324,7 @@ function add_criterio(div_personal) {
 		criterio += '<div class="col-md-2">';
 			criterio += '<div class="form-group">';
 				criterio += '<label>Percepción o deducción</label>';
-				criterio += '<select name="t_per_ded" id="'+name_id+'" class="form-control" onchange="'+evento+'">';
+				criterio += '<select name="t_per_ded[]" id="'+name_id+'" class="form-control" onchange="'+evento+'">';
 					criterio += '<option value="">...</option>';
 					criterio += '<option value="1">Percepción</option>';
 					criterio += '<option value="2">Deducción</option>';
@@ -396,6 +401,8 @@ function frm_inicio_pago() {
 		switch(tipo_pago){
 			case '1':
 				$('#aplica_all').removeClass('hidden');
+				$('#name_quincena').val( $('#c_quincena :selected').text() );
+				$('#num_quincena').val( $('#c_quincena :selected').val() );
 				$('#aplica_some').addClass('hidden');
 				$('#aplica_sindicalizados').addClass('hidden');
 				$('#aplica_not_sindicalizados').addClass('hidden');
@@ -430,7 +437,6 @@ function frm_inicio_pago() {
 				$('#aplica_not_sindicalizados').addClass('hidden');
 				$('#aplica_jefes').removeClass('hidden');
 				break;
-				
 			default:
 				alert('No existe esa opción');
 				break	
@@ -762,6 +768,7 @@ function cargar_per_ded_predeterminadas(sp) {
 				    fila +='</div>';
 				fila +='</div>';
 			fila += "</div>";
+			$('#per_predeterminadas').html("");
 			$('#per_predeterminadas').append(fila);
 			fila = "";
 			$.each(response.deducciones, function(i, val) {
@@ -794,6 +801,7 @@ function cargar_per_ded_predeterminadas(sp) {
 					    fila +='</div>';
 					fila +='</div>';
 				fila += "</div>";
+				$('#ded_predeterminadas').html("");
 				$('#ded_predeterminadas').append(fila);
 			});
 			//Sueldo base.
