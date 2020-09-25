@@ -78,6 +78,10 @@ class UAAController
 	{
 		return $this->model->savePago();
 	}
+	public function getRetardos()
+	{
+		return $this->model->getRetardos();
+	}
 	
 }
 ?>

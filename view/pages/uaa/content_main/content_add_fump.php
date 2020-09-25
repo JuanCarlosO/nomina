@@ -181,7 +181,7 @@
                                 <div class="col-md-3">
                                     <div class="form-group">
                                         <label>Concepto</label>
-                                        <select name="deducciones[]" id="percepciones" class="form-control" >
+                                        <select name="deducciones[]" id="deducciones" class="form-control" >
                                             <option value="">...</option>
                                         </select>
                                     </div>
@@ -195,7 +195,7 @@
                                             </span>
                                             <input type="text" class="form-control" placeholder="">
                                             <span class="input-group-btn">
-                                                <button type="button" class="btn btn-success btn-flat">
+                                                <button onclick="add_deduccion('div_deducciones');" type="button" class="btn btn-success btn-flat">
                                                     <i class="fa fa-plus"></i>
                                                 </button>
                                             </span>
@@ -203,7 +203,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div id="deducciones"></div>
+                            <div id="div_deducciones"></div>
                         </fieldset>
                         <fieldset>
                             <legend>RADICACIÓN DEL PAGO</legend>

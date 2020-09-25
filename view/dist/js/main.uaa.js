@@ -102,6 +102,7 @@ function getURL(url) {
 		$('#option_4').addClass('active');		
 		$('#option_4_1').addClass('active');
 		load_catalogo('c_quincena','c_quincenas','select','');	
+		load_catalogo('per_ded','per_ded','select','');	
 	}
 	if ( url == '?menu=niveles' ) {
 		$('#option_1').addClass('active');		
@@ -114,7 +115,8 @@ function getURL(url) {
 		$('#option_1_3 ').addClass('active');
 		form_smart('frm_complete_fump',false,false,'complete_fump');
 		autompletado_sustituido();
-		load_catalogo('quincena_pension','c_quincenas','select','');	
+		load_catalogo('percepciones','per_ded','select',1);	
+		load_catalogo('deducciones','per_ded','select',2);	
 	}
 	if ( url == '?menu=validar_pagar' ) {
 		$('#option_3').addClass('active');		
@@ -608,6 +610,7 @@ function autocompletado(campo,campo_hidden) {
 			$('#'+campo_hidden).val( ui.item.id );
 			if (campo == 'name_sp') {
 				cargar_per_ded_predeterminadas(ui.item.id);
+				cargar_retardos(ui.item.id);
 			}
 		}
 	});
@@ -739,6 +742,12 @@ function cargar_per_ded_predeterminadas(sp) {
 	})
 	.done(function(response) {
 		$.each(response.percepciones, function(i, val) {
+			var monto = 0;
+			if ( val.monto_regla == ''|| val.monto_regla == null || val.monto_regla == '0.00' || val.monto_regla == '0' ) {
+				monto = val.monto_origen;
+			}else{
+				monto = val.monto_regla; 
+			}
 			fila += "<div class='row'>";
 				fila += '<div class="col-md-2">';
 				    fila += '<div class="form-group">';
@@ -752,7 +761,7 @@ function cargar_per_ded_predeterminadas(sp) {
 				    fila +='<div class="form-group">';
 				        fila +='<label>Criterio</label>';
 				        fila +='<select name="criterio_per[]" id="" class="form-control" required>';
-				            fila +='<option value="'+val.id_pd+'">'+val.nombre+'</option>';
+				            fila +='<option value="'+val.pd_id+'">'+val.nombre+'</option>';
 				        fila +='</select>';
 				    fila +='</div>';
 				fila +='</div>';
@@ -763,7 +772,7 @@ function cargar_per_ded_predeterminadas(sp) {
 				            fila +='<span class="input-group-addon">';
 				                fila +='<i class="fa fa-dollar"></i>';
 				            fila +='</span>';
-				            fila +='<input type="text" name="per_monto[]" value="'+val.monto+'" class="form-control" placeholder="500" onkeypress="return event.charCode >= 45 && event.charCode <= 57">';
+				            fila +='<input type="text" name="per_monto[]" value="'+monto+'" class="form-control" placeholder="500" onkeypress="return event.charCode >= 45 && event.charCode <= 57">';
 				        fila +='</div>';
 				    fila +='</div>';
 				fila +='</div>';
@@ -815,28 +824,136 @@ function cargar_per_ded_predeterminadas(sp) {
 }
 //agregar una percepcion
 function add_percepcion(contenedor) {
-	var fila = "";
-	fila += '<div class="row">';
-	    fila += '<div class="col-md-3">';
-	        fila += '<div class="form-group">';
-	            fila += '<label>Concepto</label>';
-	            fila += '<select name="percepiones[]" id="percepciones" class="form-control" >';
-	                fila += '<option value="">...</option>';
-	            fila += '</select>';
-	        fila += '</div>';
-	    fila += '</div>';
-	    fila += '<div class="col-md-3">';
-	        fila += '<div class="form-group">';
-	            fila += '<label>Importe</label>';
-	            fila += '<div class="input-group">';
-	                fila += '<span class="input-group-addon">';
-	                    fila += '<i class="fa fa-dollar"></i>';
-	                fila += '</span>';
-	                fila += '<input type="text" class="form-control" placeholder="">';
-	            fila += '</div>';
-	        fila += '</div>';
-	    fila += '</div>';
-	fila += '</div>';
-	$('#'+content).append(fila);
+	var divs = document.getElementsByClassName("div_per").length
+	if ( divs < 31 ) {
+		var id_val = "percepciones_"+divs;
+		var fila = "";
+		fila += '<div class="row div_per">';
+		    fila += '<div class="col-md-3">';
+		        fila += '<div class="form-group">';
+		            fila += '<label>Concepto</label>';
+		            fila += '<select name="percepiones[]" id="'+id_val+'" class="form-control" >';
+		                fila += '<option value="">...</option>';
+		            fila += '</select>';
+		        fila += '</div>';
+		    fila += '</div>';
+		    fila += '<div class="col-md-3">';
+		        fila += '<div class="form-group">';
+		            fila += '<label>Importe</label>';
+		            fila += '<div class="input-group">';
+		                fila += '<span class="input-group-addon">';
+		                    fila += '<i class="fa fa-dollar"></i>';
+		                fila += '</span>';
+		                fila += '<input type="text" name="per_importe[]" value="" class="form-control" placeholder="">';
+		            fila += '</div>';
+		        fila += '</div>';
+		    fila += '</div>';
+		fila += '</div>';
+		$('#'+contenedor).append(fila);
+		load_catalogo(id_val,'per_ded','select',1);	
+	}else{
+		alert('LIMITE ALCANZADO. INTENTE AGREGAR MÁS ELMENTOS EN EL MÓDULO NÓMINA/APLICAR REGLAS.');
+	}
 	return false;
+}
+//agregar una seccion de deduccion
+function add_deduccion(contenedor) {
+	var divs = document.getElementsByClassName("div_ded").length
+	if (divs < 31) {
+		var id_val = "deducciones_"+divs;
+		var fila = "";
+		fila += '<div id="'+divs+'" class="row div_ded">';
+		    fila += '<div class="col-md-3">';
+		        fila += '<div class="form-group">';
+		            fila += '<label>Concepto</label>';
+		            fila += '<select name="deducciones[]" id="'+id_val+'" class="form-control" >';
+		                fila += '<option value="">...</option>';
+		            fila += '</select>';
+		        fila += '</div>';
+		    fila += '</div>';
+		    fila += '<div class="col-md-3">';
+		        fila += '<div class="form-group">';
+		            fila += '<label>Importe</label>';
+		            fila += '<div class="input-group">';
+		                fila += '<span class="input-group-addon">';
+		                    fila += '<i class="fa fa-dollar"></i>';
+		                fila += '</span>';
+		                fila += '<input type="text" name="ded_importe[]" class="form-control" placeholder="">';
+		            fila += '</div>';
+		        fila += '</div>';
+		    fila += '</div>';
+		fila += '</div>';
+		$('#'+contenedor).append(fila);
+		load_catalogo(id_val,'per_ded','select',2);
+	}else{
+		alert('LIMITE ALCANZADO. INTENTE AGREGAR MÁS ELMENTOS EN EL MÓDULO NÓMINA/APLICAR REGLAS.');
+	}
+	return false;
+}
+
+function cargar_retardos(sp_id) {
+	var quincena = $('#num_quincena').val();
+	var descuento = 0;
+	var fila = "";
+	//Buscar y mostrar si la persona cuenta con retardos
+	//1. 9:00 a 9:10 no hay retardo pero no hay premio.
+	//2. 9:11 a 9:30 es retardo 
+	//3. Despues de 9:30  ya es falta
+	$.ajax({
+		url: 'controller/puente.php',
+		type: 'POST',
+		dataType: 'json',
+		data: {option: '14',sp:sp_id, q:quincena},
+		async:false,
+		cache:false,
+	})
+	.done(function(response) {
+		if(response.status == 'error'){
+			alerta('a_all',response.status,response.message,'');
+		}else{
+			if ( response.tiempos.length > 0 ) {
+				$.each(response.tiempos, function(i, val) {
+					var he = moment(val.h_entrada,'HH:mm:ss');
+					var hee = moment('09:00:00','HH:mm:ss');
+
+					var diff = he.diff(hee,'minutes');
+					if (diff > 0 && diff<=10) {
+						alert('Es la hora de tolerancia');
+					}else if ( diff >=11 && diff <=30 ){
+						fila += '<div class="row">';
+						    fila += '<div class="col-md-4">';
+						        fila += '<div class="form-group">';
+						            fila += '<label>Dia del retardo</label>';
+						            fila += '<input type="text" name="f_retardo[]" value="'+val.f_asistencia+'" class="form-control">';
+						        fila += '</div>';
+						    fila += '</div>';
+						    fila += '<div class="col-md-4">';
+						        fila += '<div class="form-group">';
+						            fila += '<label>Minutos de retardo</label>';
+						            fila += '<input type="text" name="min_retraso[]" value="'+diff+'" class="form-control">';
+						        fila += '</div>';
+						    fila += '</div>';
+						    fila += '<div class="col-md-4">';
+						        fila += '<div class="form-group">';
+						            fila += '<label>Monto del retardo</label>';
+						            fila += '<input type="text" name="mon_retardo[]" value="" class="form-control">';
+						        fila += '</div>';
+						    fila += '</div>';
+						fila += '</div>';
+						$('#div_retardos').append(fila);
+					}else if (diff > 30){
+						alert('Se le debe de descontar el dia');
+					}else if (diff < 0){
+						alert('');
+					}
+				});
+			}else{
+				$('#div_retardos').append('<label> NO SE ENCONTRARON RETARDOS NI INASISTENCIAS. </label>');
+			}
+		}
+	})
+	.fail(function(jqXHR,textStatus,errorThrown) {
+		console.log("Error en la carga de retardos: "+ jqXHR.responseText);
+	});
+	
 }

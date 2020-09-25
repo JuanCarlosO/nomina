@@ -208,7 +208,33 @@
                                 </div>
                             </div>
                         </div>
-                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Banco</label>
+                                    <select name="banco" id="banco" class="form-control">
+                                        <option value="">...</option>
+                                        <option value="1">BBVA</option>
+                                        <option value="2">HSBC</option>
+                                        <option value="3">BANAMEX</option>
+                                        <option value="4">BANORTE</option>
+                                        <option value="5">SANTANDER</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label>Número de tarjeta</label>
+                                    <input type="text" name="num_tarjeta" id="" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Número de cuenta</label>
+                                    <input type="text" name="num_cuenta" id="" class="form-control">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="box-footer">
                         <button type="reset" class="btn btn-default btn-flat">Limpiar formulario</button>

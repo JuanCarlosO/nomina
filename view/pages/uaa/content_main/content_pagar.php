@@ -63,6 +63,13 @@
                                 <div id="ded_predeterminadas"></div>
                             </fieldset>
                             <fieldset>
+                                <legend> <center>Descuentos por retardos</center> </legend>
+                                <div id="div_retardos">
+                                    
+                                </div>
+                            </fieldset>
+                            
+                            <fieldset>
                                 <legend> <center>Percepciones y Deducciones extraordinarias</center> </legend>
                                 <div class="row">
                                     <div class="col-md-1 pull-right">

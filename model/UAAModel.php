@@ -81,7 +81,11 @@ class UAAModel extends Connection
 				}else{
 					$table = $catalogo;
 					if ( $table == 'per_ded' ) {
-						$wh = " AND tipo = ".$_POST['tipo'];
+						if ( isset($_POST['tipo']) || !empty($_POST['tipo']) ) {
+							$wh = " AND tipo = ".$_POST['tipo'];
+						}else if ( isset($_POST['e']) || !empty($_POST['e']) ) {
+							$wh = " AND tipo = ".$_POST['e'];
+						}
 					}
 					
 				}
@@ -308,6 +312,25 @@ class UAAModel extends Connection
 			$this->stmt->bindParam(':dir', $dir, PDO::PARAM_INT );
 			$this->stmt->bindParam(':subdir', $subdir, PDO::PARAM_INT );
 			$this->stmt->bindParam(':depto', $depto, PDO::PARAM_INT );
+			$this->stmt->execute();
+			#Datos del banco del servidor publico
+			$banco = ( isset($_POST['banco']) ) ? mb_strtoupper($_POST['banco'],'utf-8') : NULL ;
+			$clave = ( isset($_POST['num_cuenta']) ) ? mb_strtoupper($_POST['num_cuenta'],'utf-8') : NULL ;
+			$tarjeta = ( isset($_POST['num_tarjeta']) ) ? mb_strtoupper($_POST['num_tarjeta'],'utf-8') : NULL ;
+			$this->sql ="INSERT INTO ibanco_sp(
+			    id,
+			    personal_id,
+			    banco,
+			    clave,
+			    tarjeta
+			)
+			VALUES
+			('',:persona, :banco, :clave, :tarjeta );";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':persona', $persona, PDO::PARAM_INT );
+			$this->stmt->bindParam(':banco', $banco, PDO::PARAM_INT );
+			$this->stmt->bindParam(':clave', $clave, PDO::PARAM_STR );
+			$this->stmt->bindParam(':tarjeta', $tarjeta, PDO::PARAM_STR );
 			$this->stmt->execute();
 			$alerta = array( 'status'=>'success','message'=>'EL SERVIDOR PÚBLICO: '.$nombre.' A SIDO REGISTRADO DE MANERA EXITOSA.' );
 			return json_encode( $alerta );
@@ -993,32 +1016,22 @@ class UAAModel extends Connection
 		try {
 			$conceptos = array();
 			$sp_id = $_POST['sp_id'];
-			#recuperar las percepciones 
+
 			$this->sql = "
 			SELECT
+			    r.id,
+			    r.tipo_pd,
+			    r.pd_id,
 			    pd.nombre,
-			    pd.id AS id_pd,
-			    pd.monto,
-			    pd.porcentaje,
-			    pd.cve_int,
-			    pd.cve_ext,
-			    CONCAT(
-			        p.nombre,
-			        ' ',
-			        p.ap_pat,
-			        ' ',
-			        p.ap_mat
-			    ) AS full_name
+			    r.monto AS monto_regla,
+			    pd.monto AS monto_origen
 			FROM
-			    percepciones_sp AS psp
+			    reglas AS r
 			INNER JOIN per_ded AS pd
 			ON
-			    pd.id = psp.percepcion_id
-			INNER JOIN personal AS p
-			ON
-			    p.id = psp.personal_id
+			    pd.id = r.pd_id
 			WHERE
-			    psp.personal_id = :sp_id
+			    r.personal_id = :sp_id AND r.tipo_pd = 1
 			";
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->bindParam(':sp_id',$sp_id,PDO::PARAM_INT);
@@ -1028,29 +1041,19 @@ class UAAModel extends Connection
 			#recuperar las percepciones 
 			$this->sql = "
 			SELECT
+			    r.id,
+			    r.tipo_pd,
+			    r.pd_id,
 			    pd.nombre,
-			    pd.id AS id_pd,
-			    pd.monto,
-			    pd.porcentaje,
-			    pd.cve_int,
-			    pd.cve_ext,
-			    CONCAT(
-			        p.nombre,
-			        ' ',
-			        p.ap_pat,
-			        ' ',
-			        p.ap_mat
-			    ) AS full_name
+			    r.monto AS monto_regla,
+			    pd.monto AS monto_origen
 			FROM
-			    deducciones_sp AS psp
+			    reglas AS r
 			INNER JOIN per_ded AS pd
 			ON
-			    pd.id = psp.deduccion_id
-			INNER JOIN personal AS p
-			ON
-			    p.id = psp.personal_id
+			    pd.id = r.pd_id
 			WHERE
-			    psp.personal_id = :sp_id
+			    r.personal_id = :sp_id AND r.tipo_pd = 2
 			";
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->bindParam(':sp_id',$sp_id,PDO::PARAM_INT);
@@ -1092,56 +1095,37 @@ class UAAModel extends Connection
 	{
 		try {
 			$t_concepto	= (!empty($_POST['t_concepto'])) ? mb_strtoupper($_POST['t_concepto']) : NULL ;	
-			if ( $t_concepto == '1' ) {
-				$this->sql = "INSERT INTO percepciones_sp(
-				    id,
-				    percepcion_id,
-				    personal_id,
-				    importe,
-				    n_quin,
-				    f_ini,
-				    f_fin
-				) VALUES (
-					'',
-					:concepto,
-					:personal_id,
-					:importe,
-					:n_quin,
-					:f_ini,
-					:f_fin
-				);
-				";
-			}elseif ( $t_concepto == '2' ) {
-				$this->sql = "INSERT INTO deducciones_sp(
-				    id,
-				    deduccion_id,
-				    personal_id,
-				    importe,
-				    n_quin,
-				    f_ini,
-				    f_fin
-				) VALUES (
-					'',
-					:concepto,
-					:personal_id,
-					:importe,
-					:n_quin,
-					:f_ini,
-					:f_fin
-				);";
-			}else{
-				throw new Exception("EL TIPO DE CONCEPTO (PERCEPCIÓN O DEDUCCIÓN) NO ESTA DEFINIDO.", 1);
-			}
 			$sp_id	= (isset($_POST['sp_id'])) ? mb_strtoupper($_POST['sp_id']) : NULL ;	
 			$num_quin	= (isset($_POST['num_quin'])) ? mb_strtoupper($_POST['num_quin']) : NULL ;	
 			$f_ini	= (isset($_POST['f_ini'])) ? mb_strtoupper($_POST['f_ini']) : NULL ;	
 			$f_fin	= (isset($_POST['f_fin'])) ? mb_strtoupper($_POST['f_fin']) : NULL ;	
 			$concepto	= (isset($_POST['concepto'])) ? mb_strtoupper($_POST['concepto']) : NULL ;	
-			$importe	= (isset($_POST['importe'])) ? mb_strtoupper($_POST['importe']) : NULL ;	
+			$importe	= (isset($_POST['importe'])) ? mb_strtoupper($_POST['importe']) : NULL ;
+			$this->sql = "INSERT INTO reglas(
+			    id,
+			    personal_id,
+			    tipo_pd,
+			    pd_id,
+			    monto,
+			    n_quin,
+			    f_ini,
+			    f_fin
+			) VALUES (
+				'',
+				:personal_id,
+			    :tipo_pd,
+			    :pd_id,
+			    :monto,
+			    :n_quin,
+			    :f_ini,
+			    :f_fin
+			);
+			";	
 			$this->stmt = $this->pdo->prepare($this->sql);
-			$this->stmt->bindParam(':concepto',$concepto,PDO::PARAM_INT);
 			$this->stmt->bindParam(':personal_id',$sp_id,PDO::PARAM_INT);
-			$this->stmt->bindParam(':importe',$importe,PDO::PARAM_STR);
+			$this->stmt->bindParam(':tipo_pd',$t_concepto,PDO::PARAM_INT);
+			$this->stmt->bindParam(':pd_id',$concepto,PDO::PARAM_STR);
+			$this->stmt->bindParam(':monto',$importe,PDO::PARAM_STR);
 			$this->stmt->bindParam(':n_quin',$num_quin,PDO::PARAM_INT);
 			$this->stmt->bindParam(':f_ini',$f_ini,PDO::PARAM_STR);
 			$this->stmt->bindParam(':f_fin',$f_fin,PDO::PARAM_STR);
@@ -1176,6 +1160,7 @@ class UAAModel extends Connection
 				:year
 			);
 			";
+
 			for ($i=0; $i < count($_POST['percepciones']) ; $i++) { 
 				$this->stmt = $this->pdo->prepare($this->sql);
 				$this->stmt->bindParam(':concepto',$_POST['percepciones'][$i],PDO::PARAM_INT);
@@ -1185,31 +1170,34 @@ class UAAModel extends Connection
 				$this->stmt->bindParam(':year',$year,PDO::PARAM_INT);
 				$this->stmt->execute();
 			}
-			$this->sql = "INSERT INTO deducciones_sp(
-			    id,
-			    deduccion_id,
-			    personal_id,
-			    importe,
-			    quincena,
-			    year			    
-			) VALUES (
-				'',
-				:concepto,
-				:personal_id,
-				:importe,
-				:quincena,
-				:year
-			);
-			";
-			for ($i=0; $i < count($_POST['deducciones']) ; $i++) { 
-				$this->stmt = $this->pdo->prepare($this->sql);
-				$this->stmt->bindParam(':concepto',$_POST['deducciones'][$i],PDO::PARAM_INT);
-				$this->stmt->bindParam(':personal_id',$sp_id,PDO::PARAM_INT);
-				$this->stmt->bindParam(':importe',$_POST['ded_monto'][$i],PDO::PARAM_STR);
-				$this->stmt->bindParam(':quincena',$num_quincena,PDO::PARAM_INT);
-				$this->stmt->bindParam(':year',$year,PDO::PARAM_INT);
-				$this->stmt->execute();
+			if ( isset($_POST['deducciones']) ) {
+				$this->sql = "INSERT INTO deducciones_sp(
+				    id,
+				    deduccion_id,
+				    personal_id,
+				    importe,
+				    quincena,
+				    year			    
+				) VALUES (
+					'',
+					:concepto,
+					:personal_id,
+					:importe,
+					:quincena,
+					:year
+				);
+				";
+				for ($i=0; $i < count($_POST['deducciones']) ; $i++) { 
+					$this->stmt = $this->pdo->prepare($this->sql);
+					$this->stmt->bindParam(':concepto',$_POST['deducciones'][$i],PDO::PARAM_INT);
+					$this->stmt->bindParam(':personal_id',$sp_id,PDO::PARAM_INT);
+					$this->stmt->bindParam(':importe',$_POST['ded_monto'][$i],PDO::PARAM_STR);
+					$this->stmt->bindParam(':quincena',$num_quincena,PDO::PARAM_INT);
+					$this->stmt->bindParam(':year',$year,PDO::PARAM_INT);
+					$this->stmt->execute();
+				}
 			}
+			
 			
 			$alerta = array( 'status'=>'success','message'=>'LOS DATOS DEL PAGO HAN SIDO GUARDADOS DE MANERA EXITOSA.' );
 			return json_encode( $alerta );
@@ -1234,5 +1222,26 @@ class UAAModel extends Connection
 			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
 		}
 	}
+	public function getRetardos()#Recuperar el nombre de la percepcion o deduccion
+	{
+		try {
+			$sp = (!isset($_POST['sp'])) ? NULL : $_POST['sp'] ;
+			$q  = (!isset($_POST['q'])) ? NULL : $_POST['q'] ;
+			if (is_null($sp)) {
+				throw new Exception("NO ESTA DEFINIDO EL SERVIDOR PÚBLICO.", 1);				
+			}
+			$this->sql = "SELECT * FROM registro_es WHERE personal_id = :id AND quincena_id = :q";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':id',$sp, PDO::PARAM_INT);
+			$this->stmt->bindParam(':q',$q, PDO::PARAM_INT);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			$res = array('status'=>'success','tiempos'=>$this->result);
+			return json_encode($res);
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	
 }
 ?>
