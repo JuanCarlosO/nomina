@@ -26,6 +26,25 @@
                     				</select>
                     			</div>
                     		</div>
+                    		<div class="col-md-2">
+                    			<div class="form-group">
+                    				<label>Condición</label>
+                    				<select name="condicion" id="condicion" class="form-control" required="">
+                    					<option value="">...</option>
+                    					<option value="1">Fija</option>
+                    					<option value="2">Calculable</option>
+                    				</select>
+                    			</div>
+                    		</div>
+                    		<div class="col-md-2 hidden" id="div_funciones">
+                    			<div class="form-group">
+                    				<label>Funciones</label>
+                    				<select name="funciones" id="funciones" class="form-control">
+                    					<option value="">...</option>
+                    				</select>
+                    			</div>
+                    		</div>
+                    		
                     	</div>
                     	<div class="row">
 	                    	
@@ -74,6 +93,16 @@
 	                    		</div>
 	                    	</div>
 	                    </div>
+                        <div id="cat_sat" class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label>Catalógo del SAT.</label>
+                                    <select name="c_sat" id="c_sat" class="form-control">
+                                        <option value="">...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
 	                    <div class="row">
 	                    	<div class="col-md-4"></div>
 	                    	<div class="col-md-4">

@@ -163,7 +163,7 @@
                                             <span class="input-group-addon">
                                                 <i class="fa fa-dollar"></i>
                                             </span>
-                                            <input type="text" class="form-control" placeholder="">
+                                            <input type="text" name="per_importe[]" class="form-control" placeholder="">
                                             <span class="input-group-btn">
                                                 <button type="button" class="btn btn-success btn-flat" onclick="add_percepcion('div_percepciones');">
                                                     <i class="fa fa-plus"></i>
@@ -193,7 +193,7 @@
                                             <span class="input-group-addon">
                                                 <i class="fa fa-dollar"></i>
                                             </span>
-                                            <input type="text" class="form-control" placeholder="">
+                                            <input type="text" name="ded_importe[]" class="form-control" placeholder="">
                                             <span class="input-group-btn">
                                                 <button onclick="add_deduccion('div_deducciones');" type="button" class="btn btn-success btn-flat">
                                                     <i class="fa fa-plus"></i>
@@ -377,7 +377,7 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>CVE. ISSEMYM:</label>
-                                        <input type="text" class="form-control" id="cve_issemym" name="cve_issemym" required readonly>
+                                        <input type="text" class="form-control" id="cve_issemym" name="cve_issemym"  readonly>
                                         <input type="hidden" class="form-control" id="id_cve_issemym" name="id_cve_issemym">
                                     </div>
                                 </div>
@@ -391,7 +391,7 @@
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label>R.F.C.:</label>
-                                        <input type="text" class="form-control" id="rfc_ds" name="rfc_ds" required readonly>
+                                        <input type="text" class="form-control" id="rfc_ds" name="rfc_ds"  readonly>
                                         <input type="hidden" class="form-control" id="id_rfc_ds" name="id_rfc_ds" >
                                     </div>
                                 </div>

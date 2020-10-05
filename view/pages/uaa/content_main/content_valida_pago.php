@@ -46,18 +46,28 @@ if ( isset($_POST['t_per_ded']) ) {
         $names_pd[$i] = $uaa->getNamePD($_POST['criterio_e'][$i]);
     }
 }
+$suma_min =0 ;$retardo_suma = 0;
+if ( isset($_POST['min_retraso']) ) {
+    for ($i=0; $i < count($_POST['min_retraso']); $i++) { 
+        $suma_min = $suma_min + (int) $_POST['min_retraso'][$i];
+    }
+    #calculo de precio por retardos 
+    $retardo_suma = ($sumaA/30.4/9/60) * $suma_min;
+    #$retardo_suma = number_format($retardo_suma,2,'.',',');
+    #recortar los decimales 
+    $pos = strpos($retardo_suma, '.');
+    if ( $pos != false ) {
+        $retardo_suma = substr($retardo_suma, 0, ($pos+3));
+    }
+}
+
+$sumaB = $sumaB + $retardo_suma;
 
 $tot = $sumaA - $sumaB;
 #integrar las percepciones y las deducciones
 $percepciones = array();
 $deducciones = array();
-$suma_retardos =0 ;
-if ( isset($_POST['mon_retardo']) ) {
-    for ($i=0; $i < count($_POST['mon_retardo']); $i++) { 
-        $suma_retardos = $suma_retardos + (int) $_POST['mon_retardo'][$i];
-    }
-}
-$tot = $tot -$suma_retardos;
+
 ?>
 <section class="content container-fluid">
     <div class="row">
@@ -160,7 +170,7 @@ $tot = $tot -$suma_retardos;
                                     <tr>
                                         <td>S/C</td>
                                         <td>DESCUENTO POR RETARDOS</td>
-                                        <td><?=$suma_retardos; ?></td>
+                                        <td><?=$retardo_suma; ?></td>
                                     </tr>
                                     <tr>
                                         <td colspan="2" class="text-right"> <b>SUMA DE DEDUCCIONES:</b> </td>

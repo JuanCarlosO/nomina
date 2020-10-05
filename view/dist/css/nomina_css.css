@@ -21,3 +21,13 @@
 .border-table>tfoot>tr>td{
 	border: 1px solid #101010;
 }
+
+.borde-blanco>table,
+.borde-blanco>thead>tr>th, 
+.borde-blanco>tbody>tr>th, 
+.borde-blanco>tfoot>tr>th, 
+.borde-blanco>thead>tr>td, 
+.borde-blanco>tbody>tr>td, 
+.borde-blanco>tfoot>tr>td{
+	border: rgb(255,255,255) 1px solid;
+}

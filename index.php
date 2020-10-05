@@ -18,10 +18,6 @@ if (!isset($_SESSION['id']) AND empty($_SESSION['id'])) {
     <!-- Content Header (Page header) -->
     <?php include 'view/pages/principal.php';?>
 
-    <!-- Main content -->
-    <section class="content">
-      
-    </section>
   </div>
   <!-- /.content-wrapper -->
   <?php include 'view/pages/footer.php'; ?>

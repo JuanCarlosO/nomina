@@ -6,7 +6,8 @@
                     <h3 class="box-title">Generador de recibos de nómina por servidor público</h3>
                 </div>
                 <div class="box-body">
-                    <form action="#" id="frm_generate_recibo">
+                    <form action="controller/puente.php" id="frm_generate_recibo" target="__blank"  method="post">
+                        <input type="hidden" id="option" name="option" value="17" >
                     	<div class="row">
                             <div class="col-md-2">
                                 <div class="form-group">
@@ -28,8 +29,8 @@
                     		<div class="col-md-6">
                     			<div class="form-group">
                     				<label>Servidor público</label>
-                    				<input type="text" name="" value="" class="form-control">
-                    				<input type="hidden" name="" value="">
+                    				<input type="text" id="servidor" name="sp" value="" class="form-control">
+                    				<input type="hidden" id="servidor_id" name="sp_id" value="">
                     			</div>
                     		</div>
                     	</div>

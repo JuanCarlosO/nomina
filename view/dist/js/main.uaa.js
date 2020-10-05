@@ -53,6 +53,15 @@ function getURL(url) {
 		form_smart('frm_registr_e',false,true,'alerta_entrada');
 		form_smart('frm_registr_s',false,true,'alerta_salida');
 	}
+	if ( url == '?menu=retardos' ) {
+		$('#option_2').addClass('active');		
+		$('#option_2_2').addClass('active');		 
+	}
+	if ( url == '?menu=h_asistencia' ) {
+		$('#option_2').addClass('active');		
+		$('#option_2_3').addClass('active');		 
+	}
+	
 	if ( url == '?menu=ver_asistencia' ) {
 		$('#option_2').addClass('active');		
 		$('#option_2_4').addClass('active');		
@@ -84,6 +93,16 @@ function getURL(url) {
 			if ($(this).val() == '1') { $('#monto').removeClass('hidden');$('#porcentaje').addClass('hidden'); }
 			if ($(this).val() == '2') {$('#porcentaje').removeClass('hidden');$('#monto').addClass('hidden');}
 		});
+		$('#condicion').change(function(e) {
+			e.preventDefault();
+			if ( $(this).val() == "2" ) {
+				$('#div_funciones').removeClass('hidden');
+				load_catalogo('funciones','formulas','select','');
+			}else{
+				$('#div_funciones').addClass('hidden');
+			}
+		});
+		
 		form_smart('frm_add_pd',false,false,'alerta_pd');
 	}
 	if ( url == '?menu=add_regla' ) {
@@ -93,10 +112,17 @@ function getURL(url) {
 		change('t_concepto','per_ded','concepto');
 		form_smart('frm_add_regla',false,false,'alerta_regla');
 	}
+	if ( url == '?menu=quincenas_p' ) {
+		$('#option_3').addClass('active');		
+		$('#option_3_4 ').addClass('active');
+		load_catalogo('quincenas','c_quincenas','select','');
+		frm_quincena_p();
+	}
 	if ( url == '?menu=comprobante_sp' ) {
 		$('#option_4').addClass('active');		
 		$('#option_4_2').addClass('active');
 		load_catalogo('c_quincena','c_quincenas','select','');	
+		autocompletado('servidor','servidor_id');
 	}
 	if ( url == '?menu=r_criterio' ) {
 		$('#option_4').addClass('active');		
@@ -123,6 +149,23 @@ function getURL(url) {
 		$('#option_3_1 ').addClass('active');
 		form_smart('frm_realiza_pago',false,false,'alerta_pagar');
 	}
+	if ( url == '?menu=timbre' ) {
+		$('#option_5').addClass('active');		
+		$('#option_5_1 ').addClass('active');
+		load_catalogo('quincenas','c_quincenas','select','');
+		frm_reporte_timbre();
+		
+	}
+	if ( url == '?menu=osfem' ) {
+		$('#option_5').addClass('active');		
+		$('#option_5_2 ').addClass('active');
+	}
+	if ( url == '?menu=dispersion' ) {
+		$('#option_5').addClass('active');		
+		$('#option_5_3 ').addClass('active');
+		tbl_dispersion();
+	}
+	
 	
 	return false;
 }
@@ -138,13 +181,22 @@ function getPersonal() {
 	        { leyenda: 'CURP-RFC',class:'text-center', columna:'curp_rfc',ordenable:true,filtro:true},
 	        { leyenda: 'Clave serv. público',class:'text-center', columna:'cve_sp',ordenable:true,filtro:true},
 	        { leyenda: 'Años de serv.',class:'text-center', columna:'cve_sp',ordenable:false,filtro:true},
-	        { leyenda: 'Personal',class:'text-center', columna:'cve_sp',ordenable:false,filtro:true},
+	        { leyenda: 'Tipo de personal',class:'text-center', columna:'d.t_sindicato',ordenable:false,filtro:function(){
+	        	return anexGrid_select({
+	        		data:[
+		        		{valor:'',contenido:'TODOS'},
+		        		{valor:'1',contenido:'SINDICALIZADO'},
+		        		{valor:'2',contenido:'NO SINDICALIZADO'}
+	        		]
+	        	});
+	        }},
 	        { leyenda: 'Estado',class:'text-center', columna:'p.estado',ordenable:false,filtro:function(){
 	        	return anexGrid_select({
 	        		data:[
 		        		{valor:'',contenido:'TODOS'},
 		        		{valor:'1',contenido:'ACTIVOS'},
-		        		{valor:'2',contenido:'INACTIVOS'}
+		        		{valor:'2',contenido:'INACTIVOS'},
+		        		{valor:'3',contenido:'BAJAS'}
 	        		]
 	        	});
 	        }},
@@ -172,12 +224,14 @@ function getPersonal() {
 	            return obj.nombre+ " "+ obj.ap_pat+" "+obj.ap_mat;
 	        }}, 
 	        {class:'text-left', formato: function(tr, obj, valor){
-	        	var lista = "";
+	        	var lista = "", direccion = "", subdireccion = "", departamento = "";
+	        	direccion = ( obj.direccion != null ? obj.direccion : 'NO REGISTRADO' );
+	        	subdireccion = ( obj.subdireccion != null ? obj.subdireccion : 'NO REGISTRADO' );
+	        	departamento = ( obj.departamento != null ? obj.departamento : 'NO REGISTRADO' );
 	        	lista+="<ul>";
-	        		lista +="<li><b>DEPENDENCIA:</b>"+obj.id+"</li>";
-	        		lista +="<li><b>DIRECCIÓN:</b>"+obj.id+"</li>";
-	        		lista +="<li><b>SUBDIRECCIÓN:</b>"+obj.id+"</li>";
-	        		lista +="<li><b>DEPARTAMENTO:</b>"+obj.id+"</li>";
+	        		lista +="<li><b>DIRECCIÓN:</b>"+direccion+"</li>";
+	        		lista +="<li><b>SUBDIRECCIÓN:</b>"+subdireccion+"</li>";
+	        		lista +="<li><b>DEPARTAMENTO:</b>"+departamento+"</li>";
 	        	lista+="</ul>";
 	            return lista;
 	        }}, 
@@ -187,19 +241,19 @@ function getPersonal() {
 	        {class:'text-left', formato: function(tr, obj, valor){
             	var lista = "";
             	lista+="<ul>";
-            		lista +="<li><b>C.U.R.P.:</b>"+obj.id+"</li>";
+            		lista +="<li><b>C.U.R.P.:</b>"+obj.curp+"</li>";
             		lista +="<li><b>R.F.C.:</b>"+obj.rfc+"</li>";
             	lista+="</ul>";
                 return lista;
 	        }}, 
 	        {class:'text-center', formato: function(tr, obj, valor){
-	            return obj.id;
+	            return obj.clave;
 	        }}, 
 	        {class:'text-center', formato: function(tr, obj, valor){
-	            return obj.id;
+	            return obj.y_ser;
 	        }}, 
 	        {class:'text-center', formato: function(tr, obj, valor){
-	            return obj.id;
+	            return obj.t_sindicato;
 	        }},
 	        {class:'text-center', formato: function(tr, obj, valor){
 	            return obj.estado;
@@ -245,17 +299,17 @@ function registro_asistencia(quincena) {
                     ]
                 });
 	        }}, 
-	        {class:'text-center', formato: function(tr, obj, valor){
+	        {class:'text-center ',style:'color: black;', formato: function(tr, obj, valor){
 	            return obj.id;
 	        }}, 
 	        
-	        {class:'text-center', formato: function(tr, obj, valor){
+	        {class:'text-center',style:'color: black;', formato: function(tr, obj, valor){
 	            return obj.full_name;
 	        }}, 
-	        {class:'text-center', formato: function(tr, obj, valor){
+	        {class:'text-center',style:'color: black;', formato: function(tr, obj, valor){
 	            return obj.f_asistencia;
 	        }}, 
-	        {class:'text-center', formato: function(tr, obj, valor){
+	        {class:'text-center',style:'color: black;', formato: function(tr, obj, valor){
 	        	var sph_salida;var estado; 
 
 	        	if ( obj.h_salida === null ) {
@@ -270,7 +324,7 @@ function registro_asistencia(quincena) {
 				var he_retardo = moment('09:11:00','HH:mm:ss');
 				var he_retardo_l = moment('09:30:00','HH:mm:ss');//Hora de retardo limite 
 				var he_falta = moment('09:31:00','HH:mm:ss');//Hora de entrada con falta
-				if (/*he.isBefore(hora_e) */he.isBetween('6:00:00',hora_e) ) {
+				if (/*he.isBefore(hora_e) || ||*/he.isSameOrBefore(hora_e) ) {
 					estado = 'OK';
 					tr.addClass('bg-green');
 				}else{
@@ -280,7 +334,7 @@ function registro_asistencia(quincena) {
 					}else if ( he.isBetween(he_retardo,he_retardo_l) ){
 						estado = 'TIENE RETARDO';
 						tr.addClass('bg-yellow');
-					}else if (he.isAfter(he_falta)) {
+					}else if (he.isSameOrAfter(he_falta)) {
 						tr.addClass('bg-red');
 						estado = 'TIENE FALTA';
 					}
@@ -318,6 +372,8 @@ function add_criterio(div_personal) {
 	var name_id = "c_per_ded_"+divs;
 	//Nombre del destino
 	var name_destino = "criterio_"+divs;
+	//Nombre del input_monto
+	var name_id_destino = "monto_"+divs;
 	//genera evento onchange
 	var evento = "change('"+name_id+"','per_ded','"+name_destino+"');";
 	
@@ -348,10 +404,11 @@ function add_criterio(div_personal) {
 					    criterio += '<span class="input-group-addon">';
 					        criterio += '<i class="fa fa-dollar"></i>';
 					    criterio += '</span>';
-					    criterio += '<input type="text" class="form-control" name="monto[]"  placeholder="500" onkeypress="return event.charCode >= 45 && event.charCode <= 57">';
+					    criterio += '<input type="text" class="form-control" id="'+name_id_destino+'" name="monto[]"  placeholder="500" onkeypress="return event.charCode >= 45 && event.charCode <= 57">';
 		    			criterio += '<span class="input-group-btn">';
 		    				criterio += '<i class="fa fa-dollar"></i>';
 		                	criterio += '<button type="button" class="btn btn-danger btn-flat" onclick="remove_criterio('+divs+')"> <i class="fa fa-minus"></i> </button>';
+		                	//criterio += '<button type="button" class="btn btn-primary btn-flat" onclick="alert('+"'Buscar en la calcu financiera'"+');"> <i class="fa fa-search"></i> </button>';
 		                criterio += '</span>';
 					criterio += '</div>';
 				criterio += '</div>';
@@ -365,6 +422,7 @@ function add_criterio(div_personal) {
 		$('div#'+div_personal).append(criterio);
 	}
 	change(name_id,'per_ded',name_destino);
+	getInfoPerDed(name_destino,name_id_destino);
 	return false;
 }
 //Remover un criterio 	
@@ -575,7 +633,7 @@ function getPerDed() {// Recuperar las percepciones y deducciones
 	            return obj.cve_int;
 	        }}, 
 	        {class:'text-center', formato: function(tr, obj, valor){
-	            return obj.cve_exp;
+	            return obj.cve_ext;
 	        }}, 
 	        
 	        { class:'',formato: function(tr, obj, valor){
@@ -741,8 +799,10 @@ function cargar_per_ded_predeterminadas(sp) {
 		cache:false,
 	})
 	.done(function(response) {
+		$('#per_predeterminadas').html("");
+		$('#ded_predeterminadas').html("");
 		$.each(response.percepciones, function(i, val) {
-			var monto = 0;
+			var monto = 0; var fila = "";
 			if ( val.monto_regla == ''|| val.monto_regla == null || val.monto_regla == '0.00' || val.monto_regla == '0' ) {
 				monto = val.monto_origen;
 			}else{
@@ -777,43 +837,50 @@ function cargar_per_ded_predeterminadas(sp) {
 				    fila +='</div>';
 				fila +='</div>';
 			fila += "</div>";
-			$('#per_predeterminadas').html("");
+			
 			$('#per_predeterminadas').append(fila);
-			fila = "";
-			$.each(response.deducciones, function(i, val) {
-				fila += "<div class='row'>";
-					fila += '<div class="col-md-2">';
-					    fila += '<div class="form-group">';
-					        fila += '<label>Percepción o deducción</label>';
-					        fila += '<select name="c_per_ded" id="" class="form-control" required>';
-					            fila += '<option value="2">Deducción</option>';
-					        fila += '</select>';
-					    fila += '</div>';
-					fila += '</div>';
-					fila +='<div class="col-md-4">';
-					    fila +='<div class="form-group">';
-					        fila +='<label>Criterio</label>';
-					        fila +='<select name="criterio_ded[]" id="" class="form-control" required>';
-					            fila +='<option value="'+val.id_pd+'">'+val.nombre+'</option>';
-					        fila +='</select>';
-					    fila +='</div>';
-					fila +='</div>';
-					fila +='<div class="col-md-3">';
-					    fila +='<div class="form-group">';
-					        fila +='<label>Monto</label>';
-					        fila +='<div class="input-group">';
-					            fila +='<span class="input-group-addon">';
-					                fila +='<i class="fa fa-dollar"></i>';
-					            fila +='</span>';
-					            fila +='<input type="text" name="ded_monto[]" value="'+val.monto+'" class="form-control" placeholder="500" onkeypress="return event.charCode >= 45 && event.charCode <= 57">';
-					        fila +='</div>';
-					    fila +='</div>';
-					fila +='</div>';
-				fila += "</div>";
-				$('#ded_predeterminadas').html("");
-				$('#ded_predeterminadas').append(fila);
-			});
+			
+			
 			//Sueldo base.
+		});
+		$.each(response.deducciones, function(i, val) {
+			var monto = 0; var fila = "";
+			if ( val.monto_regla == ''|| val.monto_regla == null || val.monto_regla == '0.00' || val.monto_regla == '0' ) {
+				monto = val.monto_origen;
+			}else{
+				monto = val.monto_regla; 
+			}
+			fila += "<div class='row'>";
+				fila += '<div class="col-md-2">';
+				    fila += '<div class="form-group">';
+				        fila += '<label>Percepción o deducción</label>';
+				        fila += '<select name="c_per_ded" id="" class="form-control" required>';
+				            fila += '<option value="2">Deducción</option>';
+				        fila += '</select>';
+				    fila += '</div>';
+				fila += '</div>';
+				fila +='<div class="col-md-4">';
+				    fila +='<div class="form-group">';
+				        fila +='<label>Criterio</label>';
+				        fila +='<select name="criterio_ded[]" id="" class="form-control" required>';
+				            fila +='<option value="'+val.pd_id+'">'+val.nombre+'</option>';
+				        fila +='</select>';
+				    fila +='</div>';
+				fila +='</div>';
+				fila +='<div class="col-md-3">';
+				    fila +='<div class="form-group">';
+				        fila +='<label>Monto</label>';
+				        fila +='<div class="input-group">';
+				            fila +='<span class="input-group-addon">';
+				                fila +='<i class="fa fa-dollar"></i>';
+				            fila +='</span>';
+				            fila +='<input type="text" name="ded_monto[]" value="'+monto+'" class="form-control" placeholder="500" onkeypress="return event.charCode >= 45 && event.charCode <= 57">';
+				        fila +='</div>';
+				    fila +='</div>';
+				fila +='</div>';
+			fila += "</div>";
+			
+			$('#ded_predeterminadas').append(fila);
 		});
 	})
 	.fail(function(jqXHR,textStatus,errorThrown) {
@@ -911,6 +978,8 @@ function cargar_retardos(sp_id) {
 		if(response.status == 'error'){
 			alerta('a_all',response.status,response.message,'');
 		}else{
+			//Limpiar 
+			$('#div_retardos').html("");
 			if ( response.tiempos.length > 0 ) {
 				$.each(response.tiempos, function(i, val) {
 					var he = moment(val.h_entrada,'HH:mm:ss');
@@ -930,7 +999,30 @@ function cargar_retardos(sp_id) {
 						    fila += '<div class="col-md-4">';
 						        fila += '<div class="form-group">';
 						            fila += '<label>Minutos de retardo</label>';
-						            fila += '<input type="text" name="min_retraso[]" value="'+diff+'" class="form-control">';
+						            fila += '<input type="text" name="min_retraso[]" value="'+val.min_retardos+'" class="form-control">';
+						        fila += '</div>';
+						    fila += '</div>';
+						    /*fila += '<div class="col-md-4">';
+						        fila += '<div class="form-group">';
+						            fila += '<label>Monto del retardo</label>';
+						            fila += '<input type="text" name="mon_retardo[]" value="" class="form-control">';
+						        fila += '</div>';
+						    fila += '</div>';*/
+						fila += '</div>';
+						$('#div_retardos').append(fila);
+					}else if (diff > 30){
+						//alert('Se le debe de descontar el dia');
+						fila += '<div class="row">';
+						    fila += '<div class="col-md-4">';
+						        fila += '<div class="form-group">';
+						            fila += '<label>Dia de la falta</label>';
+						            fila += '<input type="text" name="f_retardo[]" value="'+val.f_asistencia+'" class="form-control">';
+						        fila += '</div>';
+						    fila += '</div>';
+						    fila += '<div class="col-md-4">';
+						        fila += '<div class="form-group">';
+						            fila += '<label>Hora de entrada</label>';
+						            fila += '<input type="text" name="min_retraso[]" value="'+he.format('HH:mm:ss')+'" class="form-control">';
 						        fila += '</div>';
 						    fila += '</div>';
 						    fila += '<div class="col-md-4">';
@@ -941,10 +1033,8 @@ function cargar_retardos(sp_id) {
 						    fila += '</div>';
 						fila += '</div>';
 						$('#div_retardos').append(fila);
-					}else if (diff > 30){
-						alert('Se le debe de descontar el dia');
 					}else if (diff < 0){
-						alert('');
+						console.log('anda bien de tiempos');
 					}
 				});
 			}else{
@@ -954,6 +1044,207 @@ function cargar_retardos(sp_id) {
 	})
 	.fail(function(jqXHR,textStatus,errorThrown) {
 		console.log("Error en la carga de retardos: "+ jqXHR.responseText);
+	});
+	
+}
+//recuperar info de la per_ded 
+function getInfoPerDed(campo,destino) {
+	$('#'+campo).change(function(e) {
+		e.preventDefault();
+		var pd = $(this).val();
+		var sp_id = $("#sp_id").val();
+		if (pd == '' || pd == null) {
+			alert('DEBER SELECCIONAR OTRA OPCIÓN.');
+		}else{
+			$.post('controller/puente.php', {option: '15',pd:pd,sp:sp_id}, function(data, textStatus, xhr) {
+				if (data.cond == 'error') {
+					alert(' NO SE DETECTO UNA PERCEPCIÓN/DEDUCCIÓN VALIDA.');
+				}else{
+					$('#'+destino).val(data.valor);
+				}
+			},'json');
+		}
+		
+	});
+	return false;
+}
+// buscar las quincenas pagadas
+function frm_quincena_p() {
+	$('#frm_quincena_p').submit(function(e) {
+		e.preventDefault();
+		//
+		var y , q;
+		y = $('#year').val();
+		q = $('#quincenas').val();
+		//limpiar el div
+		$('#tbl_qp').html("");
+		var datos = {
+		    class: 'table-striped table-bordered table-hover',
+		    columnas: [
+		    	{ leyenda: 'Acciones', class:'text-center',ordenable:false},
+		        { leyenda: 'ID', class:'text-center',ordenable:true,columna:'id'},
+		        { leyenda: 'Nombre_completo',class:'text-center', columna:'full_name',ordenable:false,filtro:true},
+		        { leyenda: 'Área',class:'text-center', columna:'n_area',ordenable:true,filtro:true},
+		        { leyenda: 'Nivel-Rango',class:'text-center', columna:'nivel',ordenable:true,filtro:true},
+		        { leyenda: 'Tipo de personal',class:'text-center', columna:'',ordenable:true,filtro:function(){
+		        	return anexGrid_select({
+		        	    data: [
+								{ valor: '', contenido: 'Todos' },
+								{ valor: '1', contenido: 'Sindicalizado' },
+								{ valor: '2', contenido: 'No sindicalizado' },
+	        	            ]
+	        	        });
+		        }},
+		        { leyenda: 'Tot. Deducciones',class:'text-center', columna:'',ordenable:false,filtro:false},
+		        { leyenda: 'Tot. Percepciones',class:'text-center', columna:'',ordenable:false,filtro:false},
+		        { leyenda: 'Tot. General',class:'text-center', columna:'',ordenable:false,filtro:false},	        
+		    ],
+		    modelo: [
+		    	{ class:'',formato: function(tr, obj, valor){
+		            return anexGrid_dropdown({
+	                    contenido: '<i class="glyphicon glyphicon-cog"></i>',
+	                    class: 'btn btn-primary opciones',
+	                    target: '__blank',
+	                    id: 'editar-' + obj.id,
+	                    data: acciones = [
+		    				{ href: "index.php?menu=edit_pd&sp_id="+obj.id, contenido: '<i class="fa fa-pencil"></i> Editar percepciones/deducciones' },
+	                    ]
+	                });
+		        }}, 
+		        {class:'text-center', formato: function(tr, obj, valor){
+		            return obj.id;
+		        }}, 
+		        {class:'text-center', formato: function(tr, obj, valor){
+		            return obj.full_name;
+		        }}, 
+		        
+		        {class:'text-center', formato: function(tr, obj, valor){
+		            return obj.n_area;
+		        }}, 
+		        
+		        {class:'text-center', formato: function(tr, obj, valor){
+		            return obj.n_nivel;
+		        }}, 
+		        {class:'text-center', formato: function(tr, obj, valor){
+		        	var t_sindicato = "";
+		        	if (obj.t_sindicato == null) {
+		        		t_sindicato = "SIN DEFINIR";
+		        	}else{
+		        		t_sindicato = obj.t_sindicato;
+		        	}
+		            return t_sindicato;
+		        }}, 
+		        {class:'text-center', formato: function(tr, obj, valor){
+		            return obj.t_ded;
+		        }}, 
+		        {class:'text-center', formato: function(tr, obj, valor){
+		            return obj.t_per;
+		        }},
+		        {class:'text-center', formato: function(tr, obj, valor){
+		            return obj.t_general;
+		        }}, 
+		    ],
+		    url: 'controller/puente.php?option=7',
+		    columna: 'id',
+		    columna_orden: 'DESC',
+		    ordenable: true,
+		    type:'POST',
+		    parametros:[{'year':y},{'quincena':q}],
+		    paginable:true,
+		    limite:[25,50,100,200,500],
+		    filtrable:true
+		    
+		};
+		var tabla = $("#tbl_qp").anexGrid(datos);
+	});
+}
+function apply_datatables(tabla, name_tbl) {
+	if ( ! $.fn.DataTable.isDataTable( '#'+name_tbl ) ) {
+		
+		tabla.DataTable({
+			dom: "<'row'<'col-md-5'l><'col-sm-2 'B><'col-sm-5 pull-right'f>>"+ 'rtip',
+	        buttons: [ 
+	        	{ 
+	        		extend: 'excel', 
+	        		className: 'btn btn-success btn-flat' ,
+	        		text: '<i class="fa fa-file-excel-o"></i> Excel',
+	        		titleAttr: 'Exportar a excel'
+	        	}
+	        ],
+	        "language": {
+	        	"url": "//cdn.datatables.net/plug-ins/1.10.21/i18n/Spanish.json"
+	      	},
+	      	"lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "TODOS"]]
+		});
+	}
+	
+	return false;
+	// body...
+}
+function frm_reporte_timbre() {
+	//apply_datatables($('#tbl_sat'));
+	$('#frm_reporte_timbre').submit(function(e) {
+		e.preventDefault();
+		$('#tbl_sat>tbody').html("");
+		var dataForm = $(this).serialize();
+		$.ajax({
+			url: 'controller/puente.php',
+			type: 'POST',
+			dataType: 'json',
+			data: dataForm,
+			cache:false,
+			async:false,
+		})
+		.done(function(response) {
+
+			$.each(response.data, function(i, val) {
+				var fila = "";
+				var importe = val.importe+'0000';
+				fila += '<tr class="bg-gray text-center">';
+					fila += '<td>'+val.clave+'</td>';
+					fila += '<td>'+val.cve_ext+':'+val.pd_name+'</td>';
+					fila += '<td>'+val.cve_ext+'</td>';
+					fila += '<td>'+val.pd_name+'</td>';
+					fila += '<td>'+importe+'</td>';
+					fila += '<td>'+importe+'</td>';
+					fila += '<td>03</td>';
+				fila += '</tr>';
+				console.log(fila);
+				$('#tbl_sat').append(fila);
+			});
+			apply_datatables($('#tbl_sat'),'tbl_sat');
+		})
+		.fail(function(jqXHR,textStatus,errorThrown) {
+			console.log("error");
+		});
+		
+		
+	});
+}
+function tbl_dispersion() {
+	var tbl =  $('#tbl_dispersion');
+	$.ajax({
+		url: 'controller/puente.php',
+		type: 'POST',
+		dataType: 'json',
+		data: {option: '18'},
+		async:false,
+		cache: false,
+	})
+	.done(function(response) {
+		$.each(response.data, function(i, val) {
+			var fila = "";
+			fila += "<tr>";
+				fila += "<td>Cuenta CLABE</td>";	
+				fila += "<td>"+val.clave+"</td>";	
+				fila += "<td>"+val.importe+"</td>";	
+				fila += "<td>"+val.full_name+"</td>";	
+			fila += "</tr>";
+			tbl.append(fila);
+		});
+	})
+	.fail(function(jqXHR,textStatus,errorThrown) {
+		console.log("Error: "+jqXHR.responseText);
 	});
 	
 }

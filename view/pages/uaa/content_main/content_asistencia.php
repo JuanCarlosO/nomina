@@ -30,7 +30,7 @@ $p = $uaa->getPersonalByCard();
                                             <div class="col-md-4">
                                                 <div class="form-group">
                                                     <label>Seleccione el dia</label>
-                                                    <input type="date" name="dia_e" value="" class="form-control">
+                                                    <input type="date" name="dia_e" value="" class="form-control" required="">
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
@@ -84,7 +84,7 @@ $p = $uaa->getPersonalByCard();
                                                 <div class="col-md-4">
                                                     <div class="form-group">
                                                         <label>Seleccione el dia</label>
-                                                        <input type="date" name="dia_s" value="" class="form-control">
+                                                        <input type="date" name="dia_s" value="" class="form-control" required="">
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4">

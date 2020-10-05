@@ -10,12 +10,17 @@
                     <div class="box-body">
                         <div id="add_person"></div>
                         <div class="row">
-                            <div class="col-md-10"></div>
-                            
+                            <div class="col-md-7"></div>
+                           <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>FECHA DE INGRESO A LA U.A.I</label>
+                                    <input type="date" name="f_ingreso" value="" class="form-control" required="">
+                                </div>
+                            </div>
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>NÚMERO DE TARJETA</label>
-                                    <input type="number" name="n_tarjeta" value="" class="form-control" min="1" max="200">
+                                    <input type="number" name="n_tarjeta" value="" class="form-control" min="1" max="200" required="">
                                 </div>
                             </div>
                         </div>

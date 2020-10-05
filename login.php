@@ -8,7 +8,7 @@ session_destroy();
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <link rel="shortcut icon" href="view/dist/img/qd_1.png"/>
+  <link rel="shortcut icon" href="view/dist/img/pagar.png"/>
   <title>.:NÓMINA:.</title>
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">

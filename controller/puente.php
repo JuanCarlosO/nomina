@@ -73,6 +73,19 @@ if ( isset($_POST['option']) ) {
 		case '14':
 			echo $uaa->getRetardos();
 			break;	
+		case '15':
+			echo $uaa->getInfoPerDed();
+			break;	
+		case '16':
+			echo $uaa->getTimbrado();
+			break;	
+		case '17':
+			#echo $uaa->getTimbrado();
+			echo $uaa->generatePDF();
+			break;	
+		case '18':
+			echo $uaa->getDispersion();
+			break;	
 					
 		default:
 			echo json_encode(array( 'status'=>'error','message'=>'NO SE A DEFINIDO LA OPCIÓN DEL MÉTODO A LA QUE DESEA ACCEDER SU FORMULARIO <br> INFORME ESTE PROBLEMA A DESARROLLO DE SISTEMAS (ext: 129).' ));
@@ -100,6 +113,10 @@ if ( isset($_POST['option']) ) {
 			break;
 		case '6':
 			echo $uaa->getRegistroSP();
+			break;
+		# Buscar las quincena pagada
+		case '7':
+			echo $uaa->getQuincenaPagada();
 			break;
 		
 			

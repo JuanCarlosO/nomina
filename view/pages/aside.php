@@ -37,7 +37,7 @@
 					<li id="option_2_4" class=""><a href="index.php?menu=ver_asistencia"><i class="fa fa-list"></i> Ver listado  </a></li>
 					
 					<li id="option_2_2"><a href="index.php?menu=retardos"><i class="fa fa-clock-o"></i> Retardos </a></li>
-					<li id="option_1_3"><a href="index.php?menu=h_asistencia"><i class="fa fa-history"></i> Historico </a></li>
+					<li id="option_2_3"><a href="index.php?menu=h_asistencia"><i class="fa fa-history"></i> Historico </a></li>
 				</ul>				
 			</li>
 			<li id="option_3" class=" treeview">
@@ -49,8 +49,9 @@
 				</a>
 				<ul class="treeview-menu">
 					<li id="option_3_1" class=""><a href="index.php?menu=pagar"><i class="fa fa-money"></i> Pagar  </a></li>
-					<li id="option_3_2" class=""><a href="index.php?menu=add_pd"><i class="fa fa-money"></i> Alta Percep./Deduc.  </a></li>
-					<li id="option_3_3" class=""><a href="index.php?menu=add_regla"><i class="fa fa-money"></i> Aplicar reglas  </a></li>
+					<li id="option_3_2" class=""><a href="index.php?menu=add_pd"><i class="fa fa-plus"></i> Alta Percep./Deduc.  </a></li>
+					<li id="option_3_3" class=""><a href="index.php?menu=add_regla"><i class="fa fa-star"></i> Aplicar reglas  </a></li>
+					<li id="option_3_4" class=""><a href="index.php?menu=quincenas_p"><i class="fa fa-cc-visa"></i> Quincenas pagadas  </a></li>
 				</ul>				
 			</li>
 			<li id="option_4" class=" treeview">
@@ -63,6 +64,19 @@
 				<ul class="treeview-menu">
 					<li id="option_4_1" class=""><a href="index.php?menu=r_criterio"><i class="fa fa-dollar"></i> Reporte por criterio  </a></li>
 					<li id="option_4_2" class=""><a href="index.php?menu=comprobante_sp"><i class="fa fa-user-o"></i> Comprobante por persona  </a></li>
+				</ul>				
+			</li>
+			<li id="option_5" class=" treeview">
+				<a href="#">
+					<i class="fa fa-money"></i> <span>FINANZAS</span>
+					<span class="pull-right-container">
+						<i class="fa fa-angle-left pull-right"></i>
+					</span>
+				</a>
+				<ul class="treeview-menu">
+					<li id="option_5_1" class=""><a href="index.php?menu=timbre"><i class="fa fa-ticket"></i> Timbrado</a></li>
+					<li id="option_5_2" class=""><a href="index.php?menu=osfem"><i class="fa fa-building-o"></i> OSFEM </a></li>
+					<li id="option_5_3" class=""><a href="index.php?menu=dispersion"><i class="fa fa-object-ungroup"></i> Dispersión  </a></li>
 				</ul>				
 			</li>
 		</ul>

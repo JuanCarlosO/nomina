@@ -93,6 +93,26 @@ if ( isset($_GET['menu']) ) {
 					include 'view/pages/uaa/content_header/header_valida_pago.php';
 					include 'view/pages/uaa/content_main/content_valida_pago.php';
 					break;
+				case 'timbre':
+					include 'view/pages/uaa/content_header/header_timbre.php';
+					include 'view/pages/uaa/content_main/content_timbre.php';
+					break;
+				case 'osfem':
+					include 'view/pages/uaa/content_header/header_osfem.php';
+					include 'view/pages/uaa/content_main/content_osfem.php';
+					break;
+				case 'dispersion':
+					include 'view/pages/uaa/content_header/header_dispersion.php';
+					include 'view/pages/uaa/content_main/content_dispersion.php';
+					break;
+				case 'dispersion':
+					include 'view/pages/uaa/content_header/header_dispersion.php';
+					include 'view/pages/uaa/content_main/content_dispersion.php';
+					break;
+				case 'quincenas_p':
+					include 'view/pages/uaa/content_header/header_quincenas_p.php';
+					include 'view/pages/uaa/content_main/content_quincenas_p.php';
+					break;
 					
 				default:
 					header("Location: ../../login.php");

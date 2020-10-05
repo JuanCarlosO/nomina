@@ -1,5 +1,5 @@
 <!-- jQuery 3 -->
-<script src="view/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 
 <!-- Bootstrap 3.3.7 -->
 <script src="view/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -44,14 +44,18 @@
 <!-- AdminLTE for demo purposes -->
 <script src="view/dist/js/jquery.anexgrid.js"></script>
 <!-- DATATABLES -->
-<script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.10.20/js/dataTables.bootstrap.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.10.22/js/dataTables.bootstrap.min.js"></script>
 <!-- Scripts para creacion de botones de exportacion DataTables -->
-<script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js" type="text/javascript" ></script>
+<script src="https://cdn.datatables.net/buttons/1.6.4/js/dataTables.buttons.min.js" type="text/javascript" ></script>
+<script src="https://cdn.datatables.net/buttons/1.6.4/js/buttons.bootstrap.min.js" type="text/javascript" ></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js" type="text/javascript" ></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js" type="text/javascript" ></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js" type="text/javascript" ></script>
-<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js " type="text/javascript" ></script>
+<script src="https://cdn.datatables.net/buttons/1.6.4/js/buttons.html5.min.js" type="text/javascript" ></script>
+<script src="https://cdn.datatables.net/buttons/1.6.4/js/buttons.print.min.js" type="text/javascript" ></script>
+<script src="https://cdn.datatables.net/buttons/1.6.4/js/buttons.colVis.min.js" type="text/javascript" ></script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.28.0/moment.min.js" integrity="sha512-Q1f3TS3vSt1jQ8AwP2OuenztnLU6LwxgyyYOG1jgMW/cbEMHps/3wjvnl1P3WTrF3chJUWEoxDUEjMxDV8pujg==" crossorigin="anonymous"></script>
 <?php
 if ( $_SESSION['perfil'] == 'UAA') {
