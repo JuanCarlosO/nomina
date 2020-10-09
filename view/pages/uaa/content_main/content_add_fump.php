@@ -98,7 +98,9 @@
                                         <tr>
                                             <th width="150px">No. de plaza: </th>
                                             <td>
-                                                <input type="text" name="n_plaza" value="" class="form-control">
+                                                <select name="n_plaza" class="form-control" required="">
+                                                    <option value="">...</option>
+                                                </select>
                                             </td>
                                         </tr>
                                         <tr>

@@ -11,12 +11,7 @@
                         <div id="add_person"></div>
                         <div class="row">
                             <div class="col-md-7"></div>
-                           <div class="col-md-3">
-                                <div class="form-group">
-                                    <label>FECHA DE INGRESO A LA U.A.I</label>
-                                    <input type="date" name="f_ingreso" value="" class="form-control" required="">
-                                </div>
-                            </div>
+                           
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>NÚMERO DE TARJETA</label>
@@ -152,7 +147,12 @@
                             <div class="col-md-2">
                                 <div class="form-group">
                                     <label>ESCOLARIDAD</label>
-                                    <input type="text" name="escolaridad" value="" class="form-control">
+                                    <select name="escolaridad" id="" class="form-control">
+                                        <option value="">..</option>
+                                        <option value="LIC">LICENCIATURA</option>
+                                        <option value="MTRO(A)">MAESTRIA</option>
+                                        <option value="DOC">DOCTORADO</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-2">

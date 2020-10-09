@@ -6,8 +6,8 @@
                     <h3 class="box-title">SECCIÓN DE TIMBRADO</h3>
                 </div>
                 <div class="box-body">
-                    <div id="a_timbre"></div>
-                    <form id="frm_reporte_timbre" method="post" action="#">
+                    <div id="div_timbre"></div>
+                    <form id="frm_reporte_timbre" method="post" action="#" enctype="multipart/form-data">
                     	<input type="hidden" name="option" value="16">
                     	<div class="row">
                             <div class="col-md-3">
@@ -27,15 +27,23 @@
                     		<div class="col-md-3">
                     			<div class="form-group">
                     				<label>Tipo de reporte</label>
-                    				<select class="form-control" name="t_reporte" required="">
+                    				<select class="form-control" id="t_reporte" name="t_reporte" required="">
                     					<option value="">...</option>
                     					<option value="1">Percepciones</option>
                     					<option value="2">Deducciones</option>
-                    					<!-- <option value="3">Otros pagos</option>
-                    					<option value="4">Empleados</option> -->
+                    					<option value="3">Otros pagos</option>
+                                        <option value="4">Empleados</option>
+                    					<!--  -->
                     				</select>
                     			</div>
                     		</div>
+                            <div id="div_xml" class="col-md-3 hidden">
+                                <div class="form-group">
+                                    <label>Subir XML del SAT</label>
+                                    <input type="file" id="file" name="file" value="" class="form-control" accept=".xml">
+                                </div>
+                            </div>
+                            
                     	</div>
                         <div class="row">
                             <div class="col-md-5"></div>
@@ -60,8 +68,8 @@
                     </h3>
                 </div>
                 <div class="box-body">
-                    <div id="a_timbre"></div>
-                    <div class="table-responsive">
+                    
+                    <div id="div_sat_per" class="table-responsive hidden ">
                         <table id="tbl_sat" class="table table-striped table-condesed borde-blanco">
                             <thead>
                                 <tr class="bg-navy">
@@ -79,7 +87,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="table-responsive">
+                            <div id="div_sat_ded" class="table-responsive hidden">
                                 <table id="tbl_sat_ded" class="table table-striped table-condesed borde-blanco">
                                     <thead>
                                         <tr class="bg-navy">
@@ -97,7 +105,7 @@
                     </div>
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="table-responsive">
+                            <div id="div_sat_emp" class="table-responsive hidden">
                                 <table id="tbl_sat_empleados" class="table table-striped table-condesed borde-blanco">
                                     <thead>
                                         <tr class="bg-navy">
@@ -130,15 +138,15 @@
                     <br>
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="table-responsive">
+                            <div id="div_sat_otros" class="table-responsive hidden">
                                 <table id="tbl_sat_ded" class="table table-striped table-condesed borde-blanco">
                                     <thead>
                                         <tr class="bg-navy">
                                             <th class="text-center">Número de Empleado</th>
-                                            <th class="text-center">"Concepto en Catálogo SAT"</th>
+                                            <th class="text-center">Concepto en Catálogo SAT</th>
                                             <th class="text-center">ID Concepto Personalizado</th>
                                             <th class="text-center">Descripción del Concepto</th>
-                                            <th class="text-center"> Cantidad a Pagar </th>
+                                            <th class="text-center">Cantidad a Pagar</th>
                                             <th class="text-center">Método Pago</th>
                                             <th class="text-center">Monto del Subsidio Causado (Anexo8)</th>
                                             <th class="text-center">Año Determinación del Saldo Favor </th>

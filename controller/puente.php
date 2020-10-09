@@ -86,6 +86,24 @@ if ( isset($_POST['option']) ) {
 		case '18':
 			echo $uaa->getDispersion();
 			break;	
+		case '19':
+			echo $uaa->getColumnPD();
+			break;	
+		case '20':
+			echo $uaa->getCatSAT();
+			break;	
+		case '21':
+			if ($_POST['t_reporte'] == '1') {
+				echo $uaa->generateALFGRAL();
+			}elseif ($_POST['t_reporte'] == '2') {
+				echo $uaa->FIRMAS();
+			}elseif ($_POST['t_reporte'] == '3') {
+				echo $uaa->LISPEN();
+			}elseif ($_POST['t_reporte'] == '4') {
+				echo $uaa->LISPROYE();
+			}
+			
+			break;	
 					
 		default:
 			echo json_encode(array( 'status'=>'error','message'=>'NO SE A DEFINIDO LA OPCIÓN DEL MÉTODO A LA QUE DESEA ACCEDER SU FORMULARIO <br> INFORME ESTE PROBLEMA A DESARROLLO DE SISTEMAS (ext: 129).' ));

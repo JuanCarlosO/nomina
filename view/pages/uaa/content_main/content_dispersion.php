@@ -7,7 +7,8 @@
                 </div>
                 <div class="box-body">
                     <div id="a_dispersion"></div>
-                    <form action="#" method="post" id="frm_quincena_p" class="form-horizontal">
+                    <form action="#" method="post" id="frm_dispersion" class="form-horizontal">
+                        <input type="hidden" name="option" value="18">
                         <div class="form-group">
                             <label class="col-sm-1 control-label">Año:</label>
                             <div class="col-md-3">

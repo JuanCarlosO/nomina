@@ -128,7 +128,6 @@ function getURL(url) {
 		$('#option_4').addClass('active');		
 		$('#option_4_1').addClass('active');
 		load_catalogo('c_quincena','c_quincenas','select','');	
-		load_catalogo('per_ded','per_ded','select','');	
 	}
 	if ( url == '?menu=niveles' ) {
 		$('#option_1').addClass('active');		
@@ -143,6 +142,7 @@ function getURL(url) {
 		autompletado_sustituido();
 		load_catalogo('percepciones','per_ded','select',1);	
 		load_catalogo('deducciones','per_ded','select',2);	
+		load_catalogo('n_plaza','catalogo_plazas','select','');	
 	}
 	if ( url == '?menu=validar_pagar' ) {
 		$('#option_3').addClass('active');		
@@ -159,11 +159,14 @@ function getURL(url) {
 	if ( url == '?menu=osfem' ) {
 		$('#option_5').addClass('active');		
 		$('#option_5_2 ').addClass('active');
+		load_catalogo('quincenas','c_quincenas','select','');
+		frm_osfem();
 	}
 	if ( url == '?menu=dispersion' ) {
 		$('#option_5').addClass('active');		
 		$('#option_5_3 ').addClass('active');
-		tbl_dispersion();
+		load_catalogo('quincenas','c_quincenas','select','');
+		frm_dispersion();
 	}
 	
 	
@@ -207,12 +210,12 @@ function getPersonal() {
 	            return anexGrid_dropdown({
                     contenido: '<i class="glyphicon glyphicon-cog"></i>',
                     class: 'btn btn-primary opciones',
-                    target: '__blank',
+                    target: '_blank',
                     id: 'editar-' + obj.id,
                     data: acciones = [
 	    				{ href: "index.php?menu=add_fump&fump_id="+obj.id, contenido: '<i class="fa fa-pencil"></i>Completar F.U.M.P.' },
-	    				{ href: "index.php?menu=cedula&persona_id="+obj.id, contenido: '<i class="glyphicon glyphicon-eye-open "></i>Ver F.U.M.P.' },
-	    				{ href: "index.php?menu=edit_fump&person="+obj.id, contenido: '<i class="glyphicon glyphicon-cloud"></i> Editar F.U.M.P.' },
+	    				//{ href: "index.php?menu=cedula&persona_id="+obj.id, contenido: '<i class="glyphicon glyphicon-eye-open "></i>Ver F.U.M.P.' },
+	    				//{ href: "index.php?menu=edit_fump&person="+obj.id, contenido: '<i class="glyphicon glyphicon-cloud"></i> Editar F.U.M.P.' },
 	    				{ href: "javascript:open_modal('modal_add_file',"+obj.id+");", contenido: '<i class="fa fa-edit"></i> Adjuntar documento' },
                     ]
                 });
@@ -281,9 +284,9 @@ function registro_asistencia(quincena) {
 	    class: 'table-striped table-bordered table-hover border-table',
 	    columnas: [
 	    	{ leyenda: 'Acciones', class:'text-center',ordenable:false},
-	        { leyenda: 'ID', class:'text-center',ordenable:true,columna:'id'},
-	        { leyenda: 'Nombre_completo',class:'text-center', columna:'full_name',ordenable:false,filtro:false},
-	        { leyenda: 'Fecha de asistencia',class:'text-center', columna:'',ordenable:false,filtro:false},
+	        { leyenda: 'Núm. tarjeta', class:'text-center',ordenable:true,columna:'p.num_tarjeta', filtro:true, style:'width:100px;'},
+	        { leyenda: 'Nombre_completo',class:'text-center', columna:'full_name',ordenable:false,filtro:true},
+	        { leyenda: 'Fecha de asistencia',class:'text-center', columna:'r.f_asistencia',ordenable:false,filtro:true},
 	        { leyenda: 'Registro de asistencia',class:'text-center', columna:'name_area',ordenable:false,filtro:false},
 	    ],
 	    modelo: [
@@ -291,7 +294,7 @@ function registro_asistencia(quincena) {
 	            return anexGrid_dropdown({
                     contenido: '<i class="glyphicon glyphicon-cog"></i>',
                     class: 'btn btn-primary opciones',
-                    target: '__blank',
+                    target: '_blank',
                     id: 'editar-' + obj.id,
                     data: acciones = [
 	    				//{ href: "index.php?menu=add_fump&fump_id="+obj.id, contenido: '<i class="fa fa-pencil"></i>Completar F.U.M.P.' },
@@ -300,7 +303,7 @@ function registro_asistencia(quincena) {
                 });
 	        }}, 
 	        {class:'text-center ',style:'color: black;', formato: function(tr, obj, valor){
-	            return obj.id;
+	            return obj.num_tarjeta;
 	        }}, 
 	        
 	        {class:'text-center',style:'color: black;', formato: function(tr, obj, valor){
@@ -310,10 +313,10 @@ function registro_asistencia(quincena) {
 	            return obj.f_asistencia;
 	        }}, 
 	        {class:'text-center',style:'color: black;', formato: function(tr, obj, valor){
-	        	var sph_salida;var estado; 
+	        	var sph_salida;var estado; var diff; 
 
 	        	if ( obj.h_salida === null ) {
-	        		sph_salida = "NO SE REGISTRÓ HORA DE SALIDA.";
+	        		sph_salida = "TIENE FALTA.";
 	        	}else{
 	        		sph_salida = obj.h_salida;
 	        	}
@@ -330,20 +333,22 @@ function registro_asistencia(quincena) {
 				}else{
 					if( he.isSameOrBefore(he_tolerancia) && he.isAfter(hora_e)){
 						estado = 'NO HAY RETARDO, NO HAY PREMIO.';
-						tr.addClass('bg-navy');
+						tr.addClass('bg-aqua');
 					}else if ( he.isBetween(he_retardo,he_retardo_l) ){
-						estado = 'TIENE RETARDO';
+						diff = he.diff( he_retardo ,'minutes') ;
+						estado = 'TIENE RETARDO DE '+diff+' MINUTOS';
 						tr.addClass('bg-yellow');
 					}else if (he.isSameOrAfter(he_falta)) {
 						tr.addClass('bg-red');
 						estado = 'TIENE FALTA';
 					}
+					if (estado == undefined) {
+						tr.addClass('bg-red');
+						estado = "";
+					}
 				}	        	
 	            return "ENTRADA: <b>"+obj.h_entrada+"</b> SALIDA: <b>"+sph_salida+"</b><br> <b>"+estado+"</b>";
 	        }}, 
-	        
-	        
-	         
 	    ],
 	    url: 'controller/puente.php?option=6',
 	    columna: 'id',
@@ -352,7 +357,7 @@ function registro_asistencia(quincena) {
 	    type:'POST',
 	    paginable:true,
 	    limite:[25,50,100,200,500],
-	    filtrable:false,
+	    filtrable:true,
 	    parametros: [{q:quincena}]
 	    
 	};
@@ -1104,7 +1109,7 @@ function frm_quincena_p() {
 		            return anexGrid_dropdown({
 	                    contenido: '<i class="glyphicon glyphicon-cog"></i>',
 	                    class: 'btn btn-primary opciones',
-	                    target: '__blank',
+	                    target: '_blank',
 	                    id: 'editar-' + obj.id,
 	                    data: acciones = [
 		    				{ href: "index.php?menu=edit_pd&sp_id="+obj.id, contenido: '<i class="fa fa-pencil"></i> Editar percepciones/deducciones' },
@@ -1169,6 +1174,11 @@ function apply_datatables(tabla, name_tbl) {
 	        		className: 'btn btn-success btn-flat' ,
 	        		text: '<i class="fa fa-file-excel-o"></i> Excel',
 	        		titleAttr: 'Exportar a excel'
+	        	},{ 
+	        		extend: 'csv', 
+	        		className: 'btn btn-success btn-flat' ,
+	        		text: '<i class="fa fa-file-excel-o"></i> CSV',
+	        		titleAttr: 'Exportar a un archivo CSV'
 	        	}
 	        ],
 	        "language": {
@@ -1182,69 +1192,300 @@ function apply_datatables(tabla, name_tbl) {
 	// body...
 }
 function frm_reporte_timbre() {
+	$('#t_reporte').change(function(e) {
+		e.preventDefault();
+		if ( $(this).val() == '1' ) {
+			$('#div_sat_per').removeClass('hidden');
+			$('#div_sat_ded').addClass('hidden');
+			$('#div_sat_otros').addClass('hidden');
+		}
+		if ( $(this).val() == '2' ) {
+			$('#div_sat_ded').removeClass('hidden');
+			$('#div_sat_per').addClass('hidden');
+			$('#div_sat_otros').addClass('hidden');
+		}
+		if ( $(this).val() == '3' ) {
+			$('#div_sat_ded').addClass('hidden');
+			$('#div_sat_per').addClass('hidden');
+			$('#div_sat_otros').addClass('hidden');
+		}
+		
+		if ($(this).val() == '4' ) {
+			$('#div_xml').removeClass('hidden');
+			$('#div_sat_otros').removeClass('hidden');
+			$('#div_sat_ded').addClass('hidden');
+			$('#div_sat_per').addClass('hidden');
+		}else{
+			$('#div_xml').addClass('hidden');
+		}
+	});
 	//apply_datatables($('#tbl_sat'));
 	$('#frm_reporte_timbre').submit(function(e) {
 		e.preventDefault();
 		$('#tbl_sat>tbody').html("");
+		if ( $('#t_reporte').val() == '1' ) {
+			var dataForm = $(this).serialize();
+			$.ajax({
+				url: 'controller/puente.php',
+				type: 'POST',
+				dataType: 'json',
+				data: dataForm,
+				cache:false,
+				async:false,
+			})
+			.done(function(response) {
+
+				$.each(response.data, function(i, val) {
+					var fila = "";
+					var importe = val.importe+'0000';
+					fila += '<tr class="bg-gray text-center">';
+						fila += '<td>'+val.clave_sp+'</td>';
+						fila += '<td>'+val.cve_ext+':'+val.pd_name+'</td>';
+						fila += '<td>'+val.cve_ext+'</td>';
+						fila += '<td>'+val.pd_name+'</td>';
+						fila += '<td>'+importe+'</td>';
+						fila += '<td>'+importe+'</td>';
+						fila += '<td>03</td>';
+					fila += '</tr>';
+					console.log(fila);
+					$('#tbl_sat').append(fila);
+				});
+				apply_datatables($('#tbl_sat'),'tbl_sat');
+			})
+			.fail(function(jqXHR,textStatus,errorThrown) {
+				console.log("error");
+			});
+		}else if( $('#t_reporte').val() == '2' ){
+			var dataForm = $(this).serialize();
+			$.ajax({
+				url: 'controller/puente.php',
+				type: 'POST',
+				dataType: 'json',
+				data: dataForm,
+				cache:false,
+				async:false,
+			})
+			.done(function(response) {
+				$('#tbl_sat_ded tbody').html('');
+				$.each(response.data, function(i, val) {
+					var fila = "";
+					var importe = val.importe+'0000';
+					fila += '<tr class="bg-gray text-center">';
+						fila += '<td>'+val.clave_sp+'</td>';
+						fila += '<td>'+val.cve_sat+':'+val.name_sat+'</td>';
+						fila += '<td>'+val.cve_ext+'</td>';
+						fila += '<td>'+val.name_sat+'</td>';
+						fila += '<td>'+importe+'</td>';
+						//fila += '<td>'+importe+'</td>';
+						//fila += '<td>03</td>';
+					fila += '</tr>';
+					console.log(fila);
+					
+					$('#tbl_sat_ded').append(fila);
+				});
+				apply_datatables($('#tbl_sat_ded'),'tbl_sat_ded');
+			})
+			.fail(function(jqXHR,textStatus,errorThrown) {
+				console.log("error");
+			});
+		}else{
+			var dataForm = new FormData(document.getElementById('frm_reporte_timbre'));
+			$.ajax({
+				url: 'controller/puente.php',
+				type: 'POST',
+				dataType: 'json',
+				data: dataForm,
+				cache:false,
+				async:false,
+				contentType: false,
+	    		processData: false
+			})
+			.done(function(response) {
+				console.log(response);
+				if( response.status == 'error' ){
+					alerta('a_timbre','error',response.message,'');
+				}else{
+					$.each(response.data, function(i, val) {
+						var fila = "",sindicato = "";
+						var importe = val.importe+'0000';
+						console.log(val.t_sindicato);
+						if ( val.t_sindicato == 'SINDICALIZADO'  ) { sindicato = 'SI'; }
+						if ( val.t_sindicato == 'NO SINDICALIZADO'  ) { sindicato = 'NO'; }
+						fila += '<tr class="bg-gray text-center">';
+							fila += '<td>'+val.clave+'</td>';
+							fila += '<td>'+val.nombre+' '+val.ap_pat+' '+val.ap_mat+'</td>';
+							fila += '<td>'+val.rfc+'</td>';
+							fila += '<td>'+val.curp+'</td>';
+							fila += '<td>rh.timbradouai@gmail.com</td>';
+							fila += '<td>02 : Sueldos</td>';
+							fila += '<td>04 : Quincenal</td>';
+							fila += '<td>'+val.issemym+'</td>';
+							fila += '<td>'+val.importe+'</td>';
+							fila += '<td>'+(val.importe/15.2).toFixed(2)+'</td>';
+							fila += '<td>'+val.name_area+'</td>';
+							fila += '<td>'+val.puesto+'</td>';
+							fila += '<td>'+val.f_ingreso_gem+'</td>';
+							fila += '<td>01 : Contrato de trabajo por tiempo indeterminado</td>';
+							fila += '<td>MEX : Estado de México</td>';
+							fila += '<td>1 : Clase I</td>';
+							fila += '<td>'+sindicato+'</td>';
+							fila += '<td>01 : Diurna</td>';
+							fila += '<td>'+val.uuid+'</td>';
+						fila += '</tr>';
+						
+						$('#tbl_sat_empleados tbody').html('');
+						$('#tbl_sat_empleados').append(fila);
+					});
+					apply_datatables($('#tbl_sat_empleados'),'tbl_sat_empleados');
+				}
+				
+			})
+			.fail(function(jqXHR,textStatus,errorThrown) {
+				console.log("error: "+jqXHR.responseText);
+			});
+		}
+		
+		
+	});
+}
+function frm_dispersion() {
+	var tbl =  $('#tbl_dispersion');
+	$('#frm_dispersion').submit(function(e) {
+		e.preventDefault();
 		var dataForm = $(this).serialize();
 		$.ajax({
 			url: 'controller/puente.php',
 			type: 'POST',
 			dataType: 'json',
 			data: dataForm,
-			cache:false,
 			async:false,
+			cache: false,
 		})
 		.done(function(response) {
-
 			$.each(response.data, function(i, val) {
 				var fila = "";
-				var importe = val.importe+'0000';
-				fila += '<tr class="bg-gray text-center">';
-					fila += '<td>'+val.clave+'</td>';
-					fila += '<td>'+val.cve_ext+':'+val.pd_name+'</td>';
-					fila += '<td>'+val.cve_ext+'</td>';
-					fila += '<td>'+val.pd_name+'</td>';
-					fila += '<td>'+importe+'</td>';
-					fila += '<td>'+importe+'</td>';
-					fila += '<td>03</td>';
-				fila += '</tr>';
-				console.log(fila);
-				$('#tbl_sat').append(fila);
+				fila += "<tr>";
+					fila += "<td>Cuenta CLABE</td>";	
+					fila += "<td>"+val.clave+"</td>";	
+					fila += "<td>"+val.importe+"</td>";	
+					fila += "<td>"+val.full_name+"</td>";	
+				fila += "</tr>";
+				tbl.append(fila);
 			});
-			apply_datatables($('#tbl_sat'),'tbl_sat');
+			apply_datatables($('#tbl_dispersion'),'tbl_dispersion');
 		})
 		.fail(function(jqXHR,textStatus,errorThrown) {
-			console.log("error");
+			console.log("Error: "+jqXHR.responseText);
 		});
-		
-		
 	});
 }
-function tbl_dispersion() {
-	var tbl =  $('#tbl_dispersion');
+function frm_osfem() {
+	var tbl =  $('#tbl_osfem');
+	$('#frm_osfem').submit(function(e) {
+		e.preventDefault();
+		var dataForm = $(this).serialize();
+		$('.percepciones, .deducciones, .neto').remove();
+		$('#tbl_osfem tbody').html('');
+		//Buscar  las  columnas
+		$.ajax({
+			url: 'controller/puente.php',
+			type: 'POST',
+			dataType: 'json',
+			data: dataForm,
+			async:false,
+			cache: false,
+		})
+		.done(function(response) {
+			//apply_datatables($('#tbl_osfem'),'tbl_osfem');
+			//Dibujar las columnas de percepciones
+			var c = 1;
+			for(i = 0; i < response.data.percepciones_sp.length ; i++){
+				$('#tbl_osfem thead tr').append('<th class="percepciones">Percepción '+(c)+'</th>');
+				c++;
+			}
+			$('#tbl_osfem thead tr').append('<th class="percepciones">Total Bruto</th>');
+			var c = 1;
+			for(i = 0; i < response.data.deducciones_sp.length ; i++){
+				$('#tbl_osfem thead tr').append('<th class="deducciones">Deducción '+(c)+'</th>');
+				c++;
+			}
+			$('#tbl_osfem thead tr').append('<th class="deducciones">Deducciones</th>');
+			$('#tbl_osfem thead tr').append('<th class="neto">Total neto</th>');
+			var conta = 1;
+			$.each(response.data.info_sp, function(i, val) {
+				var fila = "", bruto = 0, deducciones = 0, neto = 0;
+				fila += "<tr id='fila_"+i+"'>";
+					fila += "<td id='con_"+i+"'>"+conta+"</td>";
+					fila += "<td id='cat_"+i+"'>"+val.categoria+"</td>";
+					fila += "<td id='niv_"+i+"'>"+val.nivel+"</td>";
+					fila += "<td id='issemym_"+i+"'>"+val.issemym+"</td>";
+					fila += "<td id='curp_"+i+"'>"+val.curp+"</td>";
+					fila += "<td id='ap_"+i+"'>"+val.ap_pat+"</td>";
+					fila += "<td id='am_"+i+"'>"+val.ap_mat+"</td>";
+					fila += "<td id='name_"+i+"'>"+val.nombre+"</td>";
+					fila += "<td id='rfc_"+i+"'>"+val.rfc+"</td>";
+					$.each(response.data.percepciones_sp, function(ii, vall) {
+						if ( val.percepciones_sp != null ) {
+							var per_sp = val.percepciones_sp;
+							for (var i = 0; i < per_sp.length; i++) {
+								if (per_sp[i].cve_ext == vall.cve_ext) {
+									bruto = bruto + parseFloat(val.percepciones_sp[i].importe);
+									fila += "<td id='per"+vall.cve_ext+"'>"+val.percepciones_sp[i].importe+"</td>";
+								}
+							}
+						}else{
+							fila += "<td>0</td>";
+						}
+					});
+					fila += "<td id='bruto_"+i+"'>"+bruto+"</td>";
+					
+					$.each(response.data.deducciones_sp, function(a, valor) {
+						if ( val.deducciones_sp != null ) {
+							var ded_sp = val.deducciones_sp;
+							for (var i = 0; i < ded_sp.length; i++) {
+								if (ded_sp[i].cve_ext == valor.cve_ext) {
+									deducciones = deducciones + parseFloat(val.deducciones_sp[i].importe);
+									fila += "<td id='per"+valor.cve_ext+"'>"+val.deducciones_sp[i].importe+"</td>";
+								}
+							}
+						}else{
+							fila += "<td>0</td>";
+						}
+					});
+					fila += "<td id='deducciones_"+i+"'>"+deducciones+"</td>";
+					neto = bruto - deducciones;
+					neto = neto.toFixed(2);
+					fila += "<td id='neto_"+i+"'>"+neto+"</td>";
+				fila += "</tr>";
+				tbl.append(fila);
+				conta ++;
+			});
+			apply_datatables($('#tbl_osfem'),'tbl_osfem');
+		})
+		.fail(function(jqXHR,textStatus,errorThrown) {
+			console.log("Error: "+jqXHR.responseText);
+		});
+	});
+}
+function load_cat_sat(catalogo) {
 	$.ajax({
 		url: 'controller/puente.php',
 		type: 'POST',
 		dataType: 'json',
-		data: {option: '18'},
-		async:false,
+		data: {option: '20', c:catalogo},
 		cache: false,
+		async: false,
 	})
 	.done(function(response) {
+		$("#c_sat").html("");
+		$("#c_sat").append('<option value="">...</option>');
 		$.each(response.data, function(i, val) {
-			var fila = "";
-			fila += "<tr>";
-				fila += "<td>Cuenta CLABE</td>";	
-				fila += "<td>"+val.clave+"</td>";	
-				fila += "<td>"+val.importe+"</td>";	
-				fila += "<td>"+val.full_name+"</td>";	
-			fila += "</tr>";
-			tbl.append(fila);
+			$("#c_sat").append('<option value="'+val.id+'">'+val.nombre+'</option>');
 		});
 	})
 	.fail(function(jqXHR,textStatus,errorThrown) {
-		console.log("Error: "+jqXHR.responseText);
+		console.log("Error:"+jqXHR.responseText);
 	});
 	
+	return false;
 }

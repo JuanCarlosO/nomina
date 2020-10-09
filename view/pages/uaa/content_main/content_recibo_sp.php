@@ -6,7 +6,7 @@
                     <h3 class="box-title">Generador de recibos de nómina por servidor público</h3>
                 </div>
                 <div class="box-body">
-                    <form action="controller/puente.php" id="frm_generate_recibo" target="__blank"  method="post">
+                    <form action="controller/puente.php" id="frm_generate_recibo" target="_blank"  method="post">
                         <input type="hidden" id="option" name="option" value="17" >
                     	<div class="row">
                             <div class="col-md-2">

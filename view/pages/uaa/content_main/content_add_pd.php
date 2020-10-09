@@ -19,7 +19,7 @@
                     		<div class="col-md-2">
                     			<div class="form-group">
                     				<label>Percepción o Deducción</label>
-                    				<select name="concepto" class="form-control" required="">
+                    				<select id="concepto" name="concepto" class="form-control" required="" onchange="load_cat_sat(this.value)">
                     					<option value="">...</option>
                     					<option value="1">Percepción</option>
                     					<option value="2">Deducción</option>
@@ -97,7 +97,7 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Catalógo del SAT.</label>
-                                    <select name="c_sat" id="c_sat" class="form-control">
+                                    <select name="c_sat" id="c_sat" class="form-control" required>
                                         <option value="">...</option>
                                     </select>
                                 </div>

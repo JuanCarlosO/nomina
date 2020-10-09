@@ -103,7 +103,7 @@ class UAAModel extends Connection
 					}
 					
 				}
-			}elseif ($catalogo == 'direcciones_int' || $catalogo == 'subdirecciones_int' || $catalogo == 'departamentos_int') {
+			}elseif ($catalogo == 'direcciones_int' || $catalogo == 'subdirecciones_int' || $catalogo == 'departamentos_int' || $catalogo == 'catalogo_plazas') {
 				$table = 'areas';
 				$params = "id AS id, CONCAT(clave,' - ',nombre) AS value";
 				if ($catalogo == 'direcciones_int') {
@@ -466,7 +466,7 @@ class UAAModel extends Connection
 			$fecha_fin = ( isset($_POST['fecha_fin']) ) ? mb_strtoupper($_POST['fecha_fin'],'utf-8') : false ;
 			$f_egreso = ( isset($_POST['f_egreso']) ) ? mb_strtoupper($_POST['f_egreso'],'utf-8') : false ;
 			$f_promocion = ( isset($_POST['f_promocion']) ) ? mb_strtoupper($_POST['f_promocion'],'utf-8') : false ;
-			$cve_sp = ( isset($_POST['cve_sp']) ) ? mb_strtoupper($_POST['cve_sp'],'utf-8') : false ;
+			$cve_sp = ( !empty($_POST['cve_sp']) ) ? mb_strtoupper($_POST['cve_sp'],'utf-8') : null ;
 			$t_aportacion = ( isset($_POST['t_aportacion']) ) ? mb_strtoupper($_POST['t_aportacion'],'utf-8') : false ;
 			$t_imp = ( isset($_POST['t_imp']) ) ? mb_strtoupper($_POST['t_imp'],'utf-8') : false ;
 			$this->sql = "INSERT INTO datos_laborables_sp(
@@ -1056,8 +1056,10 @@ class UAAModel extends Connection
 			$wh = "";
 			foreach ($anexgrid->filtros as $filter) {
 				if ( $filter['columna'] != '' ) {
-					if ( $filter['columna'] == 'q.cve_ref' || $filter['columna'] == 'q.cve_exp' ) {
-						$wh .= " AND ".$filter['columna']." LIKE '%".$filter['valor']."%'";
+					if ( $filter['columna'] == 'full_name' || $filter['columna'] == 'q.cve_exp' ) {
+						$wh .= " AND CONCAT(p.nombre,' ',p.ap_pat,' ',p.ap_mat) LIKE '%".$filter['valor']."%'";
+					}else{
+						$wh .= " AND ".$filter['columna']." = '".$filter['valor']."'";
 					}
 				}
 			}
@@ -1066,12 +1068,12 @@ class UAAModel extends Connection
 			}
 			$this->sql = "
 			SELECT p.id, CONCAT(p.nombre,' ',p.ap_pat,' ',p.ap_mat) AS full_name, 
-			r.h_entrada, r.h_salida, r.f_asistencia 
+			r.h_entrada, r.h_salida, r.f_asistencia , p.num_tarjeta
 			FROM personal AS p 
 			INNER JOIN registro_es AS r 
 				ON r.personal_id = p.id 
 			WHERE 1=1 $wh 
-			ORDER BY p.$anexgrid->columna $anexgrid->columna_orden 
+			ORDER BY $anexgrid->columna $anexgrid->columna_orden 
 			LIMIT $anexgrid->pagina , $anexgrid->limite";
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->execute();
@@ -1158,9 +1160,10 @@ class UAAModel extends Connection
 			$ce		= (isset($_POST['cve_ext'])) ? mb_strtoupper($_POST['cve_ext']) : NULL ;
 			$condicion		= (isset($_POST['condicion'])) ? mb_strtoupper($_POST['condicion']) : NULL ;
 			$funcion		= (!empty($_POST['funciones'])) ? $_POST['funciones'] : NULL ;
+			$c_sat		= (!empty($_POST['c_sat'])) ? $_POST['c_sat'] : NULL ;
 			$this->sql = "INSERT INTO 
-			per_ded (id, nombre, tipo, monto, porcentaje, cve_int, cve_ext, condicion, formula_id) 
-			VALUES ('', :nombre, :tipo, :monto, :porce, :ci, :ce, :cond, :fun);";
+			per_ded (id, nombre, tipo, monto, porcentaje, cve_int, cve_ext, condicion, formula_id, csat_id) 
+			VALUES ('', :nombre, :tipo, :monto, :porce, :ci, :ce, :cond, :fun, :c_sat);";
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->bindParam(':nombre',$nombre,PDO::PARAM_STR);
 			$this->stmt->bindParam(':tipo',$tipo,PDO::PARAM_INT);
@@ -1170,6 +1173,7 @@ class UAAModel extends Connection
 			$this->stmt->bindParam(':ce',$ce,PDO::PARAM_STR);
 			$this->stmt->bindParam(':cond',$condicion,PDO::PARAM_INT);
 			$this->stmt->bindParam(':fun',$funcion,PDO::PARAM_INT|PDO::PARAM_BOOL);
+			$this->stmt->bindParam(':c_sat',$c_sat,PDO::PARAM_INT|PDO::PARAM_BOOL);
 			$this->stmt->execute();
 			$alerta = array( 'status'=>'success','message'=>'EL REGISTRO A SIDO GUARDADO DE MANERA EXITOSA.' );
 			return json_encode( $alerta );
@@ -1225,10 +1229,22 @@ class UAAModel extends Connection
 	public function savePago()
 	{
 		try {
-			#print_r($_POST);exit;
+			
 			$num_quincena	= (!empty($_POST['num_quincena'])) ? mb_strtoupper($_POST['num_quincena']) : NULL ;	
 			$sp_id	= (!empty($_POST['sp_id'])) ? mb_strtoupper($_POST['sp_id']) : NULL ;	
 			$year = date('Y');
+			#validar que la quincena aun no se haya pagado
+			$this->sql = "SELECT COUNT(id) AS cuenta FROM percepciones_sp WHERE personal_id = :sp AND year = :y AND quincena = :q GROUP BY id ";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':sp', $sp_id, PDO::PARAM_INT);
+			$this->stmt->bindParam(':y', $year, PDO::PARAM_INT);
+			$this->stmt->bindParam(':q', $num_quincena, PDO::PARAM_INT);
+			$this->stmt->execute();
+			$cuenta = $this->stmt->fetch(PDO::FETCH_OBJ)->cuenta;
+			if ($cuenta > 0) {
+				throw new Exception("ESTA QUINCENA YA A SIDO PAGADA", 1);
+				
+			}
 			#$t_concepto	= (!empty($_POST['t_concepto'])) ? mb_strtoupper($_POST['t_concepto']) : NULL ;	
 			$this->sql = "INSERT INTO percepciones_sp(
 			    id,
@@ -1478,15 +1494,111 @@ class UAAModel extends Connection
 			$year = $_POST['year'];
 			$quincena = $_POST['quincena'];
 			$t_reporte = $_POST['t_reporte'];
-			if ( $t_reporte == "1" ) { $tabla = 'percepciones_sp'; $as = 'per'; $col = 'percepcion_id';}
-			if ( $t_reporte == "2" ) { $tabla = 'deducciones_sp'; $as = 'ded'; $col = 'deduccion_id';}
+			
+
+			if ( $t_reporte == "1" ) { 
+				$tabla = 'percepciones_sp'; 
+				$as = 'per'; 
+				$col = 'percepcion_id';
+				$sat = "c_percepciones_sat";
+			}
+			if ( $t_reporte == "2" ) { 
+				$tabla = 'deducciones_sp'; 
+				$as = 'ded'; 
+				$col = 'deduccion_id';
+				$sat = "c_deducciones_sat";
+			}
+			if ($t_reporte == '1' || $t_reporte == '2') {
+				$this->sql = "
+				SELECT $as.*, p.clave,p.nombre,p.ap_pat,p.ap_mat,p.clave,
+				pd.nombre AS pd_name, pd.cve_ext, sat.clave AS cve_sat, 
+				sat.nombre AS name_sat , dl.clave_sp
+				FROM $tabla AS $as 
+				INNER JOIN personal AS p ON p.id = $as.personal_id
+				INNER JOIN per_ded AS pd ON pd.id = $as.$col
+				LEFT JOIN $sat AS sat ON sat.id = pd.csat_id
+				LEFT JOIN datos_laborables_sp AS dl ON dl.persona_id = p.id
+				WHERE $as.year = $year AND $as.quincena = $quincena
+				";
+				#echo $this->sql;exit;
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->execute();
+				$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			}
+			if ( $t_reporte == "4" ) { 
+				if ( empty($_FILES['file']['tmp_name']) ) {
+					throw new Exception("DEBE SELECCIONAR UN ARCHIVO XML.", 1);
+				}
+				$filexml = $_FILES['file']['tmp_name'];
+				$xml = simplexml_load_file($filexml); 
+				$ns = $xml->getNamespaces(true);
+				$xml->registerXPathNamespace('cfdi', $ns['cfdi']);
+				$xml->registerXPathNamespace('t', $ns['tfd']);
+				foreach ($xml->xpath('//t:TimbreFiscalDigital') as $tfd) {
+					$sello = $tfd['SelloCFD']; 
+					$fechaTim = $tfd['FechaTimbrado']; 
+					$uuid = $tfd['UUID']; 
+					//echo $tfd['NoCertificadoSAT']; 
+					$version = $tfd['Version']; 
+					$sello = $tfd['SelloSAT']; 
+				}
+				foreach ($xml->xpath('//cfdi:Comprobante//cfdi:Receptor') as $Receptor){ 
+				   $rfc = trim($Receptor['Rfc']); 
+				   $nombre =  $Receptor['Nombre']; 
+				} 
+				
+				#buscar al SP por RFC
+				$rfc = "%".$rfc."%";
+				$this->sql = "SELECT * FROM personal WHERE rfc LIKE :rfc";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':rfc',$rfc,PDO::PARAM_STR);
+				$this->stmt->execute();
+				$sp_id = $this->stmt->fetch(PDO::FETCH_OBJ)->id;	
+				
+				#Insertar en la tabla de xml 
+				$this->sql = "INSERT INTO registros_xml (id, personal_id, quincena, year, uuid) VALUES ('', :sp_id, :quincena, :year, :uuid);";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':sp_id',$sp_id,PDO::PARAM_INT);
+				$this->stmt->bindParam(':quincena',$quincena,PDO::PARAM_INT);
+				$this->stmt->bindParam(':year',$year,PDO::PARAM_INT);
+				$this->stmt->bindParam(':uuid',$uuid,PDO::PARAM_STR);
+				$this->stmt->execute();		
+				#Buscar los datos
+				$this->sql = "SELECT p.*, xml.uuid, per.importe, a.nombre AS name_area, 
+				d.n_pu_act AS puesto, dl.f_ingreso_gem, dl.t_sindicato	
+				FROM personal AS p 
+				LEFT JOIN registros_xml as xml ON xml.personal_id = p.id
+				LEFT JOIN percepciones_sp as per ON per.personal_id = p.id
+				LEFT JOIN areas as a ON a.id = p.area_id
+				LEFT JOIN datos_plaza as d ON d.personal_id = p.id
+				LEFT JOIN datos_laborables_sp as dl ON dl.persona_id = p.id
+				WHERE xml.year = :year AND xml.quincena = :quincena";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':quincena',$quincena,PDO::PARAM_INT);
+				$this->stmt->bindParam(':year',$year,PDO::PARAM_INT);
+				$this->stmt->execute();
+				$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			}
+
+			
+			return json_encode(array('status' =>'success', 'data' => $this->result ));
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getCatSAT()
+	{
+		try {
+			$c = $_POST['c'];
+			if ( $c == '1' ) {
+				$tabla = "c_percepciones_sat";
+			}
+			if ( $c == '2' ) {
+				$tabla = "c_deducciones_sat";
+			}
 			$this->sql = "
-			SELECT $as.*, p.clave,p.nombre,p.ap_pat,p.ap_mat,p.clave,
-			pd.nombre AS pd_name, pd.cve_ext
-			FROM $tabla AS $as 
-			INNER JOIN personal AS p ON p.id = $as.personal_id
-			INNER JOIN per_ded AS pd ON pd.id = $as.$col
-			WHERE $as.year = $year AND $as.quincena = $quincena
+			SELECT *
+			FROM $tabla 
 			";
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->execute();
@@ -1496,9 +1608,320 @@ class UAAModel extends Connection
 			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
 		}
 	}
+	public function ALFGRAL()
+	{
+		try {
+			$y = $_POST['year'];
+			$q = $_POST['c_quincena'];
+			$data = array();
+			$this->sql = "
+			SELECT p.*,dp.nu_plaza, a.clave AS cve_area, dp.n_pu_act FROM personal  AS p
+			INNER JOIN datos_plaza AS dp ON dp.personal_id = p.id
+			INNER JOIN areas AS a ON a.id = p.area_id
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			$aux = array();
+			foreach ($this->result as $key => $sp) {
+				$aux['id'] = $sp->id;
+				$aux['nu_plaza'] = $sp->nu_plaza;
+				$aux['nombre'] = $sp->nombre;
+				$aux['ap_pat'] = $sp->ap_pat;
+				$aux['ap_mat'] = $sp->ap_mat;
+				$aux['rfc'] = $sp->rfc;
+				$aux['issemym'] = $sp->issemym;
+				$aux['cve_area'] = $sp->cve_area;
+				$aux['n_pu_act'] = $sp->n_pu_act;
+				#buscar las percepciones del ser pub
+				$sql_per ="SELECT psp.*,pd.nombre AS name_pd, pd.cve_int, pd.cve_ext 
+				FROM percepciones_sp AS psp
+				INNER JOIN per_ded AS pd ON pd.id = psp.percepcion_id
+				WHERE psp.personal_id = :sp_id AND psp.quincena = :q AND psp.year = :y; ";
+				$this->stmt = $this->pdo->prepare($sql_per);
+				$this->stmt->bindParam(':sp_id', $sp->id, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q', $q, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+				$this->stmt->execute();
+				$r_per = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+				$aux['percepciones'] = $r_per;
+
+				#buscar las deducciones del ser pub
+				$sql_ded ="SELECT dsp.*,pd.nombre AS name_pd, pd.cve_int, pd.cve_ext  
+				FROM deducciones_sp AS dsp
+				INNER JOIN per_ded AS pd ON pd.id = dsp.deduccion_id
+				WHERE dsp.personal_id = :sp_id AND dsp.quincena = :q AND dsp.year = :y; ";
+				$this->stmt = $this->pdo->prepare($sql_ded);
+				$this->stmt->bindParam(':sp_id', $sp->id, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q', $q, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+				$this->stmt->execute();
+				$r_ded = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+				$aux['deducciones'] = $r_ded;
+				
+				array_push($data, $aux);
+			}
+			
+			return array('status' =>'success', 'data' => $data );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function FIRMAS($a)
+	{
+		try {
+			$y = $_POST['year'];
+			$q = $_POST['c_quincena'];
+			$this->sql = "
+			SELECT p.id, p.nombre, p.ap_pat, p.ap_mat, p.rfc,p.area_id, dp.nu_plaza 
+			FROM personal AS p 
+			LEFT JOIN datos_plaza AS dp ON dp.personal_id = p.id
+			WHERE p.area_id = $a
+			ORDER BY p.area_id ASC
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$personas = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			
+			$data = array();
+			$aux = array();
+			
+			foreach ($personas as $key => $p) {
+				$suma_p = 0;
+				$suma_d = 0;
+				$total = 0;
+				$aux['id'] = $p->id;
+				$aux['nombre'] = $p->nombre;
+				$aux['ap_pat'] = $p->ap_pat;
+				$aux['ap_mat'] = $p->ap_mat;
+				$aux['rfc'] = $p->rfc;
+				$aux['nu_plaza'] = $p->nu_plaza;
+				#Suma de percepciones
+				$this->sql = "
+				SELECT * FROM percepciones_sp WHERE personal_id = :sp_id AND quincena = :q AND year = :y
+				";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':sp_id',$p->id, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q',$q, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y',$y, PDO::PARAM_INT);
+				$this->stmt->execute();
+				$per = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+				foreach ($per as $key => $pe) {
+					$suma_p += $pe->importe;
+				}
+				$aux['total_p'] = $suma_p;
+				#suma de deducciones
+				$this->sql = "
+				SELECT * FROM deducciones_sp WHERE personal_id = :sp_id AND quincena = :q AND year = :y
+				";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':sp_id',$p->id, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q',$q, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y',$y, PDO::PARAM_INT);
+				$this->stmt->execute();
+				$ded = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+				foreach ($ded as $key => $de) {
+					$suma_d += $de->importe;
+				}
+				$aux['total_d'] = $suma_d;
+				#suma total
+				$total = $suma_p - $suma_d;
+				$aux['total'] = $total;
+				array_push($data, $aux);
+			}
+			return (object) array('status' =>'success', 'data' => $data );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function LISPEN()
+	{
+		try {
+			$this->sql = "
+			SELECT pen.*, a.nombre, a.clave, p.rfc FROM pensiones  AS pen
+			INNER JOIN personal AS p ON p.id = pen.personal_id
+			INNER JOIN areas AS a ON a.id = p.area_id
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			return array('status' =>'success', 'data' => $this->result );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function LISPROYE()
+	{
+		try {
+			$q = $_POST['c_quincena'];
+			$this->sql = "
+			SELECT DISTINCT(percepcion_id) AS per_id, pd.cve_ext, pd.nombre, p.importe FROM percepciones_sp AS p
+			INNER JOIN per_ded AS pd ON pd.id = p.percepcion_id
+			WHERE quincena = :q
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':q',$q,PDO::PARAM_INT);
+			$this->stmt->execute();
+			$per_quin = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			$data = array ();
+			$aux = array();
+			foreach ($per_quin as $key => $pq) {
+				$aux['id'] = $pq->per_id;
+				$aux['cve_ext'] = $pq->cve_ext;
+				$aux['nombre'] = $pq->nombre;
+				#
+				$this->sql = "
+				SELECT SUM(importe) AS suma 
+				FROM percepciones_sp 
+				WHERE quincena = :q AND percepcion_id = $pq->per_id
+				";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':q',$q,PDO::PARAM_INT);
+				$this->stmt->execute();
+				$suma = $this->stmt->fetch(PDO::FETCH_OBJ)->suma;
+				$aux['importe'] = $suma;
+				array_push($data, $aux);
+			}
+			$this->sql = "
+			SELECT DISTINCT(deduccion_id) AS per_id, pd.cve_ext, pd.nombre, p.importe FROM deducciones_sp AS p
+			INNER JOIN per_ded AS pd ON pd.id = p.deduccion_id
+			WHERE quincena = :q
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':q',$q,PDO::PARAM_INT);
+			$this->stmt->execute();
+			$ded_quin = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			
+			foreach ($ded_quin as $key => $pq) {
+				$aux['id'] = $pq->per_id;
+				$aux['cve_ext'] = $pq->cve_ext;
+				$aux['nombre'] = $pq->nombre;
+				#
+				$this->sql = "
+				SELECT SUM(importe) AS suma 
+				FROM percepciones_sp 
+				WHERE quincena = :q AND percepcion_id = $pq->per_id
+				";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':q',$q,PDO::PARAM_INT);
+				$this->stmt->execute();
+				$suma = $this->stmt->fetch(PDO::FETCH_OBJ)->suma;
+				$aux['importe'] = $suma;
+				array_push($data, $aux);
+			}
+			
+			return array('status' =>'success', 'data' => $data );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getAreas()
+	{
+		try {
+			$this->sql = "
+			SELECT * FROM areas 
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			return json_encode(array('status' =>'success', 'data' => $this->result ));
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getDataUser()
+	{
+		try {
+			$this->sql = "
+			SELECT p.*,a.nombre AS name_area FROM personal AS p 
+			INNER JOIN areas AS a ON a.id = p.area_id
+			WHERE p.id = :sp
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':sp',$_POST['sp_id']);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetch(PDO::FETCH_OBJ);
+			return array('status' =>'success', 'data' => $this->result );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getDatePago()
+	{
+		try {
+			$this->sql = "
+			SELECT DATE(created_at) AS f_pago FROM percepciones_sp WHERE personal_id = :sp  AND quincena = :q AND year = :y
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':sp',$_POST['sp_id']);
+			$this->stmt->bindParam(':q',$_POST['c_quincena']);
+			$this->stmt->bindParam(':y',$_POST['year']);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetch(PDO::FETCH_OBJ);
+			return array('status' =>'success', 'data' => $this->result );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getPeriodo()
+	{
+		try {
+			$this->sql = "
+			SELECT * FROM catalogo_quincenas WHERE id = :q 
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':q',$_POST['c_quincena']);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetch(PDO::FETCH_OBJ);
+			return array('status' =>'success', 'data' => $this->result );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getPercepcionesQuincena()
+	{
+		try {
+			$this->sql = "
+			SELECT per.*, pd.nombre AS name_per, pd.cve_ext  FROM percepciones_sp AS per 
+			INNER JOIN per_ded AS pd ON pd.id = per.percepcion_id
+			WHERE per.personal_id = :sp AND per.quincena = :q AND per.year = :y 
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':sp',$_POST['sp_id']);
+			$this->stmt->bindParam(':q',$_POST['c_quincena']);
+			$this->stmt->bindParam(':y',$_POST['year']);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			return array('status' =>'success', 'data' => $this->result );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getDeduccionesQuincena()
+	{
+		try {
+			$this->sql = "
+			SELECT ded.*, pd.nombre AS name_ded,pd.cve_ext  FROM deducciones_sp AS ded 
+			INNER JOIN per_ded AS pd ON pd.id = ded.deduccion_id
+			WHERE ded.personal_id = :sp AND ded.quincena = :q AND ded.year = :y 
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':sp',$_POST['sp_id']);
+			$this->stmt->bindParam(':q',$_POST['c_quincena']);
+			$this->stmt->bindParam(':y',$_POST['year']);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			return array('status' =>'success', 'data' => $this->result );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	
 	public function getDispersion()
 	{
 		try {
+			$quincena = $_POST['quincenas'];
+			$year = $_POST['year'];
 			$this->sql = "
 			SELECT p.id, CONCAT(p.nombre,' ',p.ap_pat, ' ', p.ap_mat) AS full_name,
 			b.clave 
@@ -1516,19 +1939,24 @@ class UAAModel extends Connection
 				$sum_ded = 0;
 				$aux = array();
 				#buscar las percepciones
-				$per = "SELECT * FROM percepciones_sp WHERE  personal_id = :sp";
+				$per = "SELECT * FROM percepciones_sp 
+				WHERE  personal_id = :sp AND quincena = :q AND year = :y";
 				$this->stmt = $this->pdo->prepare($per); 
 				$this->stmt->bindParam(':sp', $persona->id, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y', $year, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
 				$this->stmt->execute();
 				$r_per = $this->stmt->fetchAll(PDO::FETCH_OBJ);
 				foreach ($r_per as $p) {
 					$sum_per = (float)$sum_per + (float)$p->importe;
 				}
-
 				#buscar las deudcciones 
-				$ded = "SELECT * FROM deducciones_sp WHERE  personal_id = :sp";
+				$ded = "SELECT * FROM deducciones_sp 
+				WHERE  personal_id = :sp AND quincena = :q AND year = :y";
 				$this->stmt = $this->pdo->prepare($ded); 
 				$this->stmt->bindParam(':sp', $persona->id, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y', $year, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
 				$this->stmt->execute();
 				$r_ded = $this->stmt->fetchAll(PDO::FETCH_OBJ);
 				foreach ($r_ded as $ded) {
@@ -1540,6 +1968,111 @@ class UAAModel extends Connection
 				$aux['importe'] = ( $sum_per - $sum_ded );
 				array_push($data, $aux);
 			}
+			return json_encode(array('status' =>'success', 'data' => $data ));
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+
+	public function getColumnPD()
+	{
+		try {
+			$data = array();
+			$aux = array();
+			$year = $_POST['year'];
+			$quincena = $_POST['quincenas'];
+			#Buscar datos del SP 
+			$this->sql = "
+			SELECT p.* , dp.nu_plaza,nr.nombre AS nivel
+			FROM personal AS p
+			LEFT JOIN datos_plaza AS dp ON dp.personal_id = p.id
+			INNER JOIN niveles_rangos AS nr ON nr.id = p.nivel
+			";
+			$this->stmt = $this->pdo->prepare($this->sql); 
+			$this->stmt->bindParam(':y',$year,PDO::PARAM_INT);
+			$this->stmt->bindParam(':q',$quincena,PDO::PARAM_INT);
+			$this->stmt->execute();
+			$info_sp = $this->stmt->fetchAll(PDO::FETCH_OBJ); 
+			if ( $this->stmt->rowCount() > 0 ) {
+				foreach ($info_sp as $key => $sp) {
+					$aux['id'] = $sp->id;
+					$aux['nombre'] = $sp->nombre;
+					$aux['ap_pat'] = $sp->ap_pat;
+					$aux['ap_mat'] = $sp->ap_mat;
+					$aux['curp'] = $sp->curp;
+					$aux['rfc'] = $sp->rfc;
+					$aux['issemym'] = $sp->issemym;
+					$aux['nivel'] = $sp->nivel;
+					$aux['categoria'] = $sp->nu_plaza;
+					$this->sql = "
+					SELECT pd.nombre, pd.cve_int, pd.cve_ext , p.importe
+					FROM percepciones_sp AS p
+					INNER JOIN per_ded AS pd ON pd.id = p.percepcion_id
+					WHERE year = :y AND quincena = :q AND p.personal_id = :sp
+					GROUP BY pd.cve_ext ORDER BY pd.cve_ext ASC ;";
+					$this->stmt = $this->pdo->prepare($this->sql); 
+					$this->stmt->bindParam(':y',$year,PDO::PARAM_INT);
+					$this->stmt->bindParam(':q',$quincena,PDO::PARAM_INT);
+					$this->stmt->bindParam(':sp',$sp->id,PDO::PARAM_INT);
+					$this->stmt->execute();
+					if ($this->stmt->rowCount() > 0 ) {
+						$aux['percepciones_sp'] = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+					}else{
+						$aux['percepciones_sp'] = NULL;
+					}
+					$this->sql = "
+					SELECT pd.nombre, pd.cve_int, pd.cve_ext, d.importe
+					FROM deducciones_sp AS d
+					INNER JOIN per_ded AS pd ON pd.id = d.deduccion_id
+					WHERE year = :y AND quincena = :q AND d.personal_id = :sp
+					ORDER BY pd.cve_ext ASC;";
+					$this->stmt = $this->pdo->prepare($this->sql); 
+					$this->stmt->bindParam(':y',$year,PDO::PARAM_INT);
+					$this->stmt->bindParam(':q',$quincena,PDO::PARAM_INT);
+					$this->stmt->bindParam(':sp',$sp->id,PDO::PARAM_INT);
+					$this->stmt->execute();
+					if ($this->stmt->rowCount() > 0 ) {
+						$aux['deducciones_sp'] = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+					}else{
+						$aux['deducciones_sp'] = NULL;
+					}
+					$data['info_sp'][$key] = $aux;
+				}
+				#agregar el orden de las per / ded 
+				$this->sql = "
+				SELECT pd.nombre, pd.cve_int, pd.cve_ext 
+				FROM percepciones_sp AS p
+				INNER JOIN per_ded AS pd ON pd.id = p.percepcion_id
+				WHERE year = :y AND quincena = :q
+				GROUP BY pd.cve_ext ORDER BY pd.cve_ext;";
+				$this->stmt = $this->pdo->prepare($this->sql); 
+				$this->stmt->bindParam(':y',$year,PDO::PARAM_INT);
+				$this->stmt->bindParam(':q',$quincena,PDO::PARAM_INT);
+				$this->stmt->execute();
+				if ($this->stmt->rowCount() > 0 ) {
+					$percepciones_sp = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+				}else{
+					$percepciones_sp = NULL;
+				}
+				$this->sql = "
+				SELECT pd.nombre, pd.cve_int, pd.cve_ext 
+				FROM deducciones_sp AS d
+				INNER JOIN per_ded AS pd ON pd.id = d.deduccion_id
+				WHERE year = :y AND quincena = :q 
+				GROUP BY pd.cve_ext ORDER BY pd.cve_ext;";
+				$this->stmt = $this->pdo->prepare($this->sql); 
+				$this->stmt->bindParam(':y',$year,PDO::PARAM_INT);
+				$this->stmt->bindParam(':q',$quincena,PDO::PARAM_INT);
+				$this->stmt->execute();
+				if ($this->stmt->rowCount() > 0 ) {
+					$deducciones_sp = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+				}else{
+					$deducciones_sp = NULL;
+				}
+				$data['percepciones_sp'] = $percepciones_sp;
+				$data['deducciones_sp'] = $deducciones_sp;
+			}
+			
 			return json_encode(array('status' =>'success', 'data' => $data ));
 		} catch (Exception $e) {
 			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );

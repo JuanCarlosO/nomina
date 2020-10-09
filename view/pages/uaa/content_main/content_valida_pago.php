@@ -40,12 +40,14 @@ if ( isset($_POST['t_per_ded']) ) {
     for ($i=0; $i < count($_POST['t_per_ded']); $i++) { 
         if ( $_POST['t_per_ded'][$i] == 1 ) {
             $sumaA = $sumaA + ((float)$_POST['monto'][$i]); 
-        }elseif ( $_POST['t_per_ded'][$i] == 1 ) {
+        }elseif ( $_POST['t_per_ded'][$i] == 2 ) {
             $sumaB = $sumaB + ((float)$_POST['monto'][$i]); 
         }
-        $names_pd[$i] = $uaa->getNamePD($_POST['criterio_e'][$i]);
+        $aux = $uaa->getNamePD($_POST['criterio_e'][$i]);
+        array_push($names_pd, $aux);
     }
 }
+
 $suma_min =0 ;$retardo_suma = 0;
 if ( isset($_POST['min_retraso']) ) {
     for ($i=0; $i < count($_POST['min_retraso']); $i++) { 
@@ -159,8 +161,8 @@ $deducciones = array();
                                         for ($i=0; $i < count($_POST['t_per_ded']) ; $i++) { 
                                             if ($_POST['t_per_ded'][$i] == 2) {
                                                 echo  '<tr>';
-                                                echo     '<td>'.$names_ded[$i]->cve_int .'</td>';
-                                                echo     '<td>'.$names_ded[$i]->nombre  .'</td>';
+                                                echo     '<td>'.$names_pd[$i]->cve_int .'</td>';
+                                                echo     '<td>'.$names_pd[$i]->nombre  .'</td>';
                                                 echo     '<td>'.$_POST['monto'][$i] .'</td>';
                                                 echo  '</tr>';
                                             }
@@ -170,7 +172,7 @@ $deducciones = array();
                                     <tr>
                                         <td>S/C</td>
                                         <td>DESCUENTO POR RETARDOS</td>
-                                        <td><?=$retardo_suma; ?></td>
+                                        <td><?=$retardo_suma;?></td>
                                     </tr>
                                     <tr>
                                         <td colspan="2" class="text-right"> <b>SUMA DE DEDUCCIONES:</b> </td>
@@ -186,30 +188,40 @@ $deducciones = array();
                         <input type="hidden" name="option" value="13">
                         <input type="hidden" name="num_quincena" value="<?=$_POST['num_quincena']?>">
                         <input type="hidden" name="sp_id" value="<?=$_POST['sp_id']?>">
+                        <?php if ($retardo_suma > 0): ?>
+                        <input type="hidden" name="deducciones[]" value="10">
+                        <input type="hidden" name="ded_monto[]" value="<?=$retardo_suma?>">    
+                        <?php endif ?>
+                        
                         <?php
                         $per_list = array();
                         $ded_list = array();
-                        for ($i=0; $i < count($_POST['criterio_per']); $i++) { 
-                            $aux['criterio'] = $_POST['criterio_per'][$i];
-                            $aux['monto'] = $_POST['per_monto'][$i];
-                            array_push($per_list, $aux) ;
+                        if (isset($_POST['criterio_per'])) {
+                            for ($i=0; $i < count($_POST['criterio_per']); $i++) { 
+                                #echo $_POST['criterio_per'][$i];
+                                $a['criterio'] = $_POST['criterio_per'][$i];
+                                $a['monto'] = $_POST['per_monto'][$i];
+                                array_push($per_list, $a) ;
+                            }
                         }
+                        
                         if ( isset($_POST['criterio_ded']) ) {
                             for ($i=0; $i < count($_POST['criterio_ded']); $i++) { 
-                                $aux['criterio'] = $_POST['criterio_ded'][$i];
-                                $aux['monto'] = $_POST['ded_monto'][$i];
-                                array_push($ded_list, $aux) ;
+                                #echo "->".$_POST['criterio_ded'][$i];
+                                $a['criterio'] = $_POST['criterio_ded'][$i];
+                                $a['monto'] = $_POST['ded_monto'][$i];
+                                array_push($ded_list, $a) ;
                             }
                         }
                         
                         if (isset($_POST['criterio_e']) ) {
                             for ($i=0; $i < count($_POST['criterio_e']); $i++) { 
-                                $aux['criterio'] = $_POST['criterio_e'][$i];
-                                $aux['monto'] = $_POST['monto'][$i];
+                                $a['criterio'] = $_POST['criterio_e'][$i];
+                                $a['monto'] = $_POST['monto'][$i];
                                 if ($_POST['t_per_ded'][$i] == '1') {
-                                    array_push($per_list, $aux) ;
+                                    array_push($per_list, $a) ;
                                 }else{
-                                    array_push($ded_list, $aux) ;
+                                    array_push($ded_list, $a) ;
                                 }
                             }
                         }
@@ -222,9 +234,6 @@ $deducciones = array();
                             echo '<input type="hidden" name="ded_monto[]" value="'.$ded_list[$i]['monto'].'">';
                         }
                         ?>
-                        <!-- <code>
-                            <pre><?php print_r($ded_list) ?></pre>
-                        </code> -->
                         <div class="row">
                             <div class="col-md-4"></div>
                             <div class="col-md-4">

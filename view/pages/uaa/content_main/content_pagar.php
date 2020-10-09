@@ -41,7 +41,7 @@
                     </form>
                     
                     <div id="aplica_all" class="hidden">
-                        <form action="index.php?menu=validar_pagar" method="post" id="frm_validar_pagar" target="__blank">
+                        <form action="index.php?menu=validar_pagar" method="post" id="frm_validar_pagar" target="_blank">
                             <input type="hidden" id="name_quincena" name="name_quincena" value="">
                             <input type="hidden" id="num_quincena" name="num_quincena" value="">
                             <div id="a_all"></div>
