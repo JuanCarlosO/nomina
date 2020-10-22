@@ -7,6 +7,12 @@
                 </div>
                 <div class="box-body">
                 	<div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Año: </label>
+                                <input type="text" name="year" id="year" value="<?=date('Y');?>" class="form-control">
+                            </div>
+                        </div>
                 		<div class="col-md-3">
                 			<div class="form-group">
                 				<label>Seleccionar una quincena </label>

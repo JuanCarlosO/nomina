@@ -46,7 +46,7 @@ session_destroy();
         </div>
       <?php endif ?>
     <?php endif ?>
-    <form action="controller/puente.php" method="post">
+    <form action="controller/puente.php" method="post" >
       <input type="hidden" name="option" value="1">
       <div class="form-group has-feedback">
         <input type="text" class="form-control" placeholder="Email" name="username">

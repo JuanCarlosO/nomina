@@ -11,12 +11,21 @@
                         <input type="hidden" name="option" value="18">
                         <div class="form-group">
                             <label class="col-sm-1 control-label">Año:</label>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <input type="text" id="year" name="year" value="<?=date('Y')?>" class="form-control" maxlength="4" minlength="4" min="2020" max="<?=date('Y')?>" onkeypress="return event.charCode >= 45 && event.charCode <= 57"  required >
                             </div>
                             <label class="col-sm-1 control-label">Quincena: </label>
                             <div class="col-md-3">
                                 <select name="quincenas" id="quincenas" class="form-control" required=""></select>
+                            </div>
+                            <label class="col-sm-1 control-label">Cuenta: </label>
+                            <div class="col-md-2">
+                                <select name="cuenta" id="cuenta" class="form-control" required="">
+                                    <option value="">...</option>
+                                    <option value="1">BBVA</option>
+                                    <option value="2">OTROS BANCOS</option>
+                                    <option value="3">PENSIONES</option>
+                                </select>
                             </div>
                             <div class="col-md-1">
                                 <button type="submit" class="btn btn-success btn-flat btn-block">

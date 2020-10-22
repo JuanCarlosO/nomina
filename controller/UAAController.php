@@ -107,13 +107,46 @@ class UAAController
 	{
 		return $this->model->getCatSAT();
 	}
+	public function getReglas()
+	{
+		return $this->model->getReglas();
+	}
+	public function saveJustificante()
+	{
+		return $this->model->saveJustificante();
+	}
+	public function savePagoGlobal()
+	{
+		return $this->model->savePagoGlobal();
+	}
+	public function getTabulador()
+	{
+		return $this->model->getTabulador();
+	}
+	public function saveItemTabulador()
+	{
+		return $this->model->saveItemTabulador();
+	}
+	public function editItemTabulador()
+	{
+		return $this->model->editItemTabulador();
+	}
+	public function editRegistroES()
+	{
+		return $this->model->editRegistroES();
+	}
 	
 	public function generatePDF()
 	{
 		$data_user = $this->model->getDataUser();
 		$full_name = $data_user['data']->nombre.' '.$data_user['data']->ap_pat.' '.$data_user['data']->ap_mat;
 		#fECHA DEL PAGO 
-		$f_pago = $this->model->getDatePago()['data']->f_pago;
+		if ( empty($this->model->getDatePago()['data']) ) {
+			echo "<h1>NO SE A PAGADO ESTA QUINCENA A : ".$full_name."</h1>";exit;
+		}else{
+			$f_pago = $this->model->getDatePago()['data']->f_pago;
+		}
+		
 		#LAS PERCEPCIONES
 		$percepciones = $this->model->getPercepcionesQuincena()['data'];
 		#LAS DEDUCCIONES 
@@ -513,7 +546,6 @@ class PDFH extends FPDF
 	    // Arial italic 8
 	    $this->SetFont('Arial','I',8);
 	    $this->Cell(0,1,utf8_decode('Página '.$this->PageNo().'/{nb}'),0,0,'C');
-	    
 	    $this->SetX(12);
 	    #$this->Cell(330,8,'UNIDAD DE ASUNTOS INTERNOS',10,10,'C');
 	    #$this->Cell(20,6,utf8_decode('COMPROBANTE PARA EL SERVIDOR PÚBLICO'),10,10,'L');

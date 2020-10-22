@@ -60,7 +60,7 @@ class UAAModel extends Connection
 	{
 		try {
 			
-			$this->sql = "SELECT * FROM personal ";
+			$this->sql = "SELECT * FROM personal WHERE estado =1";
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->execute();
 			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
@@ -70,6 +70,80 @@ class UAAModel extends Connection
 			return json_encode( array('status'=>'error','message'=>$e->getMessage()) );
 		}
 	}
+	public function getItemTabulador($pm)
+	{
+		try {
+			
+			$this->sql = "SELECT * FROM tabulador_dof WHERE :pm >= limite_inf1   AND :pm <= limite_sup";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':pm',$pm,PDO::PARAM_STR);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetch(PDO::FETCH_OBJ);
+			return $this->result;
+		} catch (Exception $e) {
+			return json_encode( array('status'=>'error','message'=>$e->getMessage()) );
+		}
+	}
+	
+	public function saveJustificante()
+	{
+		try {
+			$registro_id = ( isset($_POST['registro_id']) ) ? mb_strtoupper($_POST['registro_id'],'utf-8') : false ;
+			$this->sql = "SELECT * FROM justificantes WHERE r_id = :id ";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':id',$registro_id,PDO::PARAM_INT);
+			$this->stmt->execute();
+			if ( $this->stmt->rowCount() > 0 ) {
+				throw new Exception("YA EXISTE UN JUSTIFICANTE", 1);				
+			}
+
+			$asunto = ( isset($_POST['asunto']) ) ? mb_strtoupper($_POST['asunto'],'utf-8') : false ;
+			$comentario = ( isset($_POST['comentario']) ) ? mb_strtoupper($_POST['comentario'],'utf-8') : false ;
+			if ( !empty($_FILES['file']['name']) ) {
+		    	if ( $_FILES['file']['error'] > 0 ) {
+		    		throw new Exception("DEBE DE SELECCIONAR UN DOCUMENTO.", 1);
+		    	}
+		    	if ( $_FILES['file']['size'] > 10485760 ) {
+		    		throw new Exception("EL DOCUMENTO EXCEDE EL TAMAÑO DE ARCHIVO ADMITIDO.", 1);	
+		    	}
+		    	if ( $_FILES['file']['type'] != 'application/pdf' ) {
+		    		throw new Exception("EL FORMATO DE ARCHIVO NO ES ADMITIDO (SOLO PDF). ", 1);
+		    	}
+		    	#Recuperar las variables necesarias
+		    	$name = $_FILES['file']['name'];
+		    	$type = $_FILES['file']['type'];
+		    	$size = $_FILES['file']['size'];
+		    	$destino  = $_SERVER['DOCUMENT_ROOT'].'/nomina/uploads/';
+		    	#Mover el Doc
+		    	move_uploaded_file($_FILES['file']['tmp_name'],$destino.$name);
+		    	#abrir el archivo
+		    	$file 		= fopen($destino.$name,'r');
+		    	$content 	= fread($file, $size);
+		    	$content 	= addslashes($content);
+		    	fclose($file);
+		    	#Eliminar  el archivo 
+		    	unlink($_SERVER['DOCUMENT_ROOT'].'/nomina/uploads/'.$name);		# code...
+		    }else{
+		    	throw new Exception("DEBE DE SELECCIONAR UN EXPEDIENTE", 1);
+		    }
+		    
+			$this->sql = "INSERT INTO  justificantes (id, r_id, asunto, comentario, file) VALUES ('', :r_id,  :asunto, :comentario, :file);";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':r_id',$registro_id,PDO::PARAM_INT);
+			$this->stmt->bindParam(':asunto',$asunto,PDO::PARAM_STR);
+			$this->stmt->bindParam(':comentario',$comentario,PDO::PARAM_STR);
+			$this->stmt->bindParam(':file',$content,PDO::PARAM_LOB);
+			$this->stmt->execute();
+			$this->sql = "UPDATE  registro_es SET justificado = 1 WHERE id = :id";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':id',$registro_id,PDO::PARAM_INT);
+			$this->stmt->execute();
+			return json_encode( array('status'=>'success','message'=>'JUSTIFICANTE GUARDADO DE MANERA EXITOSA.') );
+		} catch (Exception $e) {
+			return json_encode( array('status'=>'error','message'=>$e->getMessage()) );
+		}
+	}
+	
 	public function getPersonalByCard()
 	{
 		try {
@@ -82,7 +156,186 @@ class UAAModel extends Connection
 			return $e->getMessage();
 		}
 	}
+	public function savePagoGlobal()
+	{
+		try {
+			$personal 	= json_decode($this->getPersonalBy());
+			$info_quincena = json_decode($this->getInfoQuincena($_POST['quincena']));
+			$quincena 	= $_POST['quincena'];
+			
+			$y = date('Y');
+			
+			foreach ($personal as $key => $p) {
+				$sp = $p->id;
+				#validar que la quincena aun no se haya pagado
+				$this->sql = "SELECT COUNT(id) AS cuenta FROM percepciones_sp WHERE personal_id = :sp AND year = :y AND quincena = :q GROUP BY id ";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+				$this->stmt->execute();
+				
+				if ($this->stmt->rowCount() > 0 ) {
+					#throw new Exception("LA QUINCENA YA HA SIDO PAGADA.", 1);
+					$this->sql = "DELETE FROM percepciones_sp WHERE personal_id = :sp AND quincena = :q AND year = :y ";
+					$this->stmt = $this->pdo->prepare($this->sql);
+					$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+					$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+					$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+					$this->stmt->execute();
+				}
+				$this->sql = "SELECT COUNT(id) AS cuenta FROM deducciones_sp WHERE personal_id = :sp AND year = :y AND quincena = :q GROUP BY id ";
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+				$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+				$this->stmt->execute();
+				if ($this->stmt->rowCount() > 0) {
+					$this->sql = "DELETE FROM deducciones_sp WHERE personal_id = :sp AND quincena = :q AND year = :y ";
+					$this->stmt = $this->pdo->prepare($this->sql);
+					$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+					$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+					$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+					$this->stmt->execute();
+				}
 
+				$reglas 	= $this->getReglasArray($sp);
+				$total = 0;	$suma_isr = 0;
+				foreach ($reglas as $key => $r) {
+					if (is_null($r->f_ini) && is_null($r->f_fin)){
+						if ($r->tipo_pd == 'PERCEPCION') {
+							$this->sql ="INSERT INTO percepciones_sp (
+								id,
+							    percepcion_id,
+							    personal_id,
+							    importe,
+							    quincena,
+							    year
+							) VALUES (
+								'',
+								:pd,
+								:sp,
+								:importe,
+								:q,
+								:y
+							)";
+							$this->stmt = $this->pdo->prepare($this->sql);
+							$this->stmt->bindParam(':pd', $r->pd_id, PDO::PARAM_INT);
+							$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+							$this->stmt->bindParam(':importe', $r->monto, PDO::PARAM_STR);
+							$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+							$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+							$this->stmt->execute();
+							
+						}elseif($r->tipo_pd == 'DEDUCCION'){
+							$this->sql ="INSERT INTO deducciones_sp (
+							id,
+						    deduccion_id,
+						    personal_id,
+						    importe,
+						    quincena,
+						    year
+							) VALUES (
+							'',
+							:pd,
+							:sp,
+							:importe,
+							:q,
+							:y
+							)";
+							$this->stmt = $this->pdo->prepare($this->sql);
+							$this->stmt->bindParam(':pd', $r->pd_id, PDO::PARAM_INT);
+							$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+							$this->stmt->bindParam(':importe', $r->monto, PDO::PARAM_STR);
+							$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+							$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+							$this->stmt->execute();
+						}
+					}elseif ( (( $info_quincena->fecha_ini >= $r->f_ini ) && ($info_quincena->fecha_fin <= $r->f_fin)) ){
+						if ($r->tipo_pd == 'PERCEPCION') {
+							$this->sql ="INSERT INTO percepciones_sp (
+							id,
+						    percepcion_id,
+						    personal_id,
+						    importe,
+						    quincena,
+						    year
+							) VALUES (
+							'',
+							:pd,
+							:sp,
+							:importe,
+							:q,
+							:y
+							)";
+							$this->stmt = $this->pdo->prepare($this->sql);
+							$this->stmt->bindParam(':pd', $r->pd_id, PDO::PARAM_INT);
+							$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+							$this->stmt->bindParam(':importe', $r->monto, PDO::PARAM_STR);
+							$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+							$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+							$this->stmt->execute();
+							
+						}elseif($r->tipo_pd == 'DEDUCCION'){
+							$this->sql ="INSERT INTO deducciones_sp (
+							id,
+						    deduccion_id,
+						    personal_id,
+						    importe,
+						    quincena,
+						    year
+							) VALUES (
+							'',
+							:pd,
+							:sp,
+							:importe,
+							:q,
+							:y
+							)";
+							$this->stmt = $this->pdo->prepare($this->sql);
+							$this->stmt->bindParam(':pd', $r->pd_id, PDO::PARAM_INT);
+							$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+							$this->stmt->bindParam(':importe', $r->monto, PDO::PARAM_STR);
+							$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+							$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+							$this->stmt->execute();
+						}
+					}
+					if ( $r->g_isr == 'SI' ) {
+						$suma_isr += $r->monto;
+					}
+				}
+				$this->sql ="INSERT INTO deducciones_sp (
+					id,
+				    deduccion_id,
+				    personal_id,
+				    importe,
+				    quincena,
+				    year
+				) VALUES (
+					'',
+					2,
+					:sp,
+					:importe,
+					:q,
+					:y
+				)";
+				$calc = new CalculadoraModel;
+				$monto_isr = $calc->getISR($suma_isr);
+				$this->stmt = $this->pdo->prepare($this->sql);
+				$this->stmt->bindParam(':sp', $sp, PDO::PARAM_INT);
+				$this->stmt->bindParam(':importe', $monto_isr, PDO::PARAM_STR);
+				$this->stmt->bindParam(':q', $quincena, PDO::PARAM_INT);
+				$this->stmt->bindParam(':y', $y, PDO::PARAM_INT);
+				$this->stmt->execute();
+			}
+			
+			return json_encode( array('status'=>'success','message'=>'LA QUINCENA SELECCIONADA A SIDO PAGADA A TODO EL PERSONAL DE MANERA EXITOSA') );
+		} catch (Exception $e) {
+			return $e->getMessage();
+		}
+	}
+	
 	public function getCatalogo($catalogo)
 	{
 		try {
@@ -103,7 +356,7 @@ class UAAModel extends Connection
 					}
 					
 				}
-			}elseif ($catalogo == 'direcciones_int' || $catalogo == 'subdirecciones_int' || $catalogo == 'departamentos_int' || $catalogo == 'catalogo_plazas') {
+			}elseif ($catalogo == 'direcciones_int' || $catalogo == 'subdirecciones_int' || $catalogo == 'departamentos_int' ) {
 				$table = 'areas';
 				$params = "id AS id, CONCAT(clave,' - ',nombre) AS value";
 				if ($catalogo == 'direcciones_int') {
@@ -113,7 +366,7 @@ class UAAModel extends Connection
 					$wh = " AND nivel = 3 ";
 				}
 				if ( $catalogo == 'departamentos_int') {
-					$wh = " AND nivel = 4 ";
+					$wh = " AND nivel = 4 OR id = 4";
 				}
 			}else{
 				$params = "id AS id, UPPER(nombre) AS value";
@@ -124,6 +377,30 @@ class UAAModel extends Connection
 			$this->stmt->execute();
 			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
 			return json_encode($this->result);
+		} catch (Exception $e) {
+			return $e->getMessage();
+		}
+	}
+	public function  getTabulador()
+	{
+		try {
+			$anexgrid = new AnexGrid();
+			$wh = "";
+			foreach ($anexgrid->filtros as $filter) {
+				if ( $filter['columna'] != '' ) {
+					$wh .= " AND ".$filter['columna']." = ".$filter['valor'];
+				}
+			}
+			$this->sql ="SELECT * FROM tabulador_dof WHERE 1=1 $wh ORDER BY $anexgrid->columna $anexgrid->columna_orden LIMIT $anexgrid->pagina , $anexgrid->limite";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			$total = 0;
+			$this->sql = "SELECT COUNT(*) AS total FROM tabulador_dof WHERE 1=1 $wh ";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$total = $this->stmt->fetch(PDO::FETCH_OBJ)->total;
+			return $anexgrid->responde($this->result,$total);
 		} catch (Exception $e) {
 			return $e->getMessage();
 		}
@@ -156,6 +433,7 @@ class UAAModel extends Connection
 			return $e->getMessage();
 		}
 	}
+	
 	public function getNR()
 	{
 		try {
@@ -206,10 +484,45 @@ class UAAModel extends Connection
 		try {
 			$name = ( isset($_POST['nombre']) ) ? mb_strtoupper($_POST['nombre'],'utf-8') : false ;
 			$cve = ( isset($_POST['clave']) ) ? mb_strtoupper($_POST['clave'],'utf-8') : false ;
-			$this->sql ="INSERT INTO niveles_rangos (id, nombre, clave) VALUES ('',?,?);";
+			$sb = ( isset($_POST['sb']) ) ? mb_strtoupper($_POST['sb'],'utf-8') : NULL ;
+			$grat = ( isset($_POST['grat']) ) ? mb_strtoupper($_POST['grat'],'utf-8') : NULL ;
+			$forta = ( isset($_POST['forta']) ) ? mb_strtoupper($_POST['forta'],'utf-8') : NULL ;
+			$despensa = ( isset($_POST['despensa']) ) ? mb_strtoupper($_POST['despensa'],'utf-8') : NULL ;
+			$tb = ( isset($_POST['tb']) ) ? mb_strtoupper($_POST['tb'],'utf-8') : NULL ;
+			$t_rango = ( isset($_POST['t_rango']) ) ? mb_strtoupper($_POST['t_rango'],'utf-8') : NULL ;
+
+			$this->sql ="INSERT INTO niveles_rangos (
+				id, 
+				nombre, 
+				clave, 
+				sb, 
+				grat, 
+				forta, 
+				despensa, 
+				tb, 
+				t_rango
+			)
+			VALUES 
+			(
+				'',
+				:name,
+				:cve, 
+				:sb,
+				:grat,
+				:forta,
+				:despensa,
+				:tb,
+				:t_rango
+			);";
 			$this->stmt = $this->pdo->prepare($this->sql);
-			$this->stmt->bindParam(1, $name, PDO::PARAM_STR );
-			$this->stmt->bindParam(2, $cve, PDO::PARAM_STR );
+			$this->stmt->bindParam(':name', $name, PDO::PARAM_STR );
+			$this->stmt->bindParam(':cve', $cve, PDO::PARAM_STR|PDO::PARAM_BOOL );
+			$this->stmt->bindParam(':sb', $sb, PDO::PARAM_STR|PDO::PARAM_BOOL );
+			$this->stmt->bindParam(':grat', $grat, PDO::PARAM_STR|PDO::PARAM_BOOL);
+			$this->stmt->bindParam(':forta', $forta, PDO::PARAM_STR|PDO::PARAM_BOOL);
+			$this->stmt->bindParam(':despensa', $despensa, PDO::PARAM_STR|PDO::PARAM_BOOL);
+			$this->stmt->bindParam(':tb', $tb, PDO::PARAM_STR|PDO::PARAM_BOOL);
+			$this->stmt->bindParam(':t_rango', $t_rango, PDO::PARAM_INT);
 			$this->stmt->execute();
 			$alerta = array( 'status'=>'success','message'=>'EL NIVEL/RANGO A SIDO REGISTRADO DE MANERA EXITOSA.' );
 			return json_encode( $alerta );
@@ -217,6 +530,36 @@ class UAAModel extends Connection
 			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
 		}
 	}
+	public function saveItemTabulador()
+	{
+		try {
+			$lim_inf1 = ( isset($_POST['lim_inf1']) ) ? mb_strtoupper($_POST['lim_inf1'],'utf-8') : false ;
+			$lim_inf2 = ( isset($_POST['lim_inf2']) ) ? mb_strtoupper($_POST['lim_inf2'],'utf-8') : false ;
+			$lim_supe = ( isset($_POST['lim_supe']) ) ? mb_strtoupper($_POST['lim_supe'],'utf-8') : false ;
+			$cuota_fija = ( isset($_POST['cuota_fija']) ) ? mb_strtoupper($_POST['cuota_fija'],'utf-8') : false ;
+			$porce = ( isset($_POST['porcentaje']) ) ? mb_strtoupper($_POST['porcentaje'],'utf-8') : false ;
+			$subsidio = ( isset($_POST['subsidio']) ) ? mb_strtoupper($_POST['subsidio'],'utf-8') : false ;
+
+			$this->sql ="INSERT INTO tabulador_dof (
+				id, limite_inf1, limite_inf2, limite_sup, cuota_fija, porce_excedente, subsidio
+			) VALUES (
+				'',?,?,?,?,?,?
+			);";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(1, $lim_inf1, PDO::PARAM_STR );
+			$this->stmt->bindParam(2, $lim_inf2, PDO::PARAM_STR );
+			$this->stmt->bindParam(3, $lim_supe, PDO::PARAM_STR );
+			$this->stmt->bindParam(4, $cuota_fija, PDO::PARAM_STR );
+			$this->stmt->bindParam(5, $porce, PDO::PARAM_STR );
+			$this->stmt->bindParam(6, $subsidio, PDO::PARAM_STR );
+			$this->stmt->execute();
+			$alerta = array( 'status'=>'success','message'=>'LOS DATOS HAN SIDO GUARDADOS DE MANERA EXITOSA.' );
+			return json_encode( $alerta );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	
 	public function savePersonal()
 	{
 		try {
@@ -911,7 +1254,12 @@ class UAAModel extends Connection
 			);";
 			for ($i=0; $i < count($_POST['percepiones']); $i++) { 
 				$pd_id = $_POST['percepiones'][$i];
-				$monto = $_POST['per_importe'][$i];
+				if ($pd_id == '1') {
+					$monto = ((float)$_POST['per_importe'][$i] / 2);
+				}else{
+					$monto = $_POST['per_importe'][$i];
+				}
+				
 				$this->stmt = $this->pdo->prepare($this->sql);
 				$this->stmt->bindParam(':personal_id', $sp_id, PDO::PARAM_INT );
 				$this->stmt->bindParam(':pd_id', $pd_id, PDO::PARAM_INT );
@@ -1034,6 +1382,66 @@ class UAAModel extends Connection
 			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
 		}
 	}
+	public function editRegistroES()
+	{
+		try {
+			#Buscar el registro
+			$this->sql ="UPDATE registro_es SET 
+			    h_entrada = :h_entrada,
+			    h_salida = :h_salida
+			    WHERE id  = :id 
+			";
+			$id = $_POST['id']; 
+			$he = $_POST['h_entrada'];
+			$hs = $_POST['h_salida'];
+
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':h_entrada', $he, PDO::PARAM_STR);
+			$this->stmt->bindParam(':h_salida', $hs, PDO::PARAM_INT );
+			$this->stmt->bindParam(':id', $id, PDO::PARAM_STR );
+			$this->stmt->execute();
+			
+			$alerta = array( 'status'=>'success','message'=>'REGISTRO DE ENTRADA Y SALIDA ACTUALIZADO DE MANERA EXITOSA.' );
+			return json_encode( $alerta );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	
+	public function editItemTabulador()
+	{
+		try {
+			$limite_inf1 = ( isset($_POST['limite_inf1']) ) ? $_POST['limite_inf1'] : NULL ;
+			$limite_inf2 = ( isset($_POST['limite_inf2']) ) ? $_POST['limite_inf2'] : NULL ;
+			$limite_sup = ( isset($_POST['limite_sup']) ) ? $_POST['limite_sup'] : NULL ;
+			$cuota_fija = ( isset($_POST['cuota_fija']) ) ? $_POST['cuota_fija'] : NULL ;
+			$porce_excedente = ( isset($_POST['porce_excedente']) ) ? $_POST['porce_excedente'] : NULL ;
+			$subsidio = ( isset($_POST['subsidio']) ) ? $_POST['subsidio'] : NULL ;
+			$id = ( isset($_POST['id']) ) ? $_POST['id'] : NULL ;
+			$this->sql ="UPDATE tabulador_dof  SET 
+			limite_inf1=:limite_inf1,
+			limite_inf2=:limite_inf2,
+			limite_sup=:limite_sup,
+			cuota_fija=:cuota_fija,
+			porce_excedente=:porce_excedente,
+			subsidio=:subsidio
+			    WHERE id  = :id
+			";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':limite_inf1', $limite_inf1, PDO::PARAM_STR);
+			$this->stmt->bindParam(':limite_inf2', $limite_inf2, PDO::PARAM_STR);
+			$this->stmt->bindParam(':limite_sup', $limite_sup, PDO::PARAM_STR);
+			$this->stmt->bindParam(':cuota_fija', $cuota_fija, PDO::PARAM_STR);
+			$this->stmt->bindParam(':porce_excedente', $porce_excedente, PDO::PARAM_STR);
+			$this->stmt->bindParam(':subsidio', $subsidio, PDO::PARAM_STR);
+			$this->stmt->bindParam(':id', $id, PDO::PARAM_INT);
+			$this->stmt->execute();
+			$alerta = array( 'status'=>'success','message'=>'REGISTRO A SIDO EDITADO DE MANERA EXITOSA.' );
+			return json_encode( $alerta );
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
 	public function getRegistroAsistencia($quincena,$personal)
 	{
 		try {
@@ -1063,12 +1471,13 @@ class UAAModel extends Connection
 					}
 				}
 			}
-			foreach ($anexgrid->parametros as $key => $p) {
-				$wh .= " AND r.quincena_id = ".$p['q'];
-			}
+			$wh .= " AND r.quincena_id = ".$anexgrid->parametros[0]['q'];
+			$wh .= " AND YEAR(r.created_at) = ".$anexgrid->parametros[1]['y'];
+			
 			$this->sql = "
 			SELECT p.id, CONCAT(p.nombre,' ',p.ap_pat,' ',p.ap_mat) AS full_name, 
-			r.h_entrada, r.h_salida, r.f_asistencia , p.num_tarjeta
+			r.h_entrada, r.h_salida, r.f_asistencia , p.num_tarjeta, r.id AS r_id,
+			r.justificado
 			FROM personal AS p 
 			INNER JOIN registro_es AS r 
 				ON r.personal_id = p.id 
@@ -1161,9 +1570,13 @@ class UAAModel extends Connection
 			$condicion		= (isset($_POST['condicion'])) ? mb_strtoupper($_POST['condicion']) : NULL ;
 			$funcion		= (!empty($_POST['funciones'])) ? $_POST['funciones'] : NULL ;
 			$c_sat		= (!empty($_POST['c_sat'])) ? $_POST['c_sat'] : NULL ;
+			$graba		= (!empty($_POST['graba'])) ? $_POST['graba'] : NULL ;
+			$isr	= (!empty($_POST['isr'])) ? $_POST['isr'] : NULL ;
+			$issemym	= (!empty($_POST['issemym'])) ? $_POST['issemym'] : NULL ;
+			
 			$this->sql = "INSERT INTO 
-			per_ded (id, nombre, tipo, monto, porcentaje, cve_int, cve_ext, condicion, formula_id, csat_id) 
-			VALUES ('', :nombre, :tipo, :monto, :porce, :ci, :ce, :cond, :fun, :c_sat);";
+			per_ded (id, nombre, tipo, monto, porcentaje, cve_int, cve_ext, condicion, formula_id, csat_id, graba, g_isr, g_issemym)
+			VALUES ('', :nombre, :tipo, :monto, :porce, :ci, :ce, :cond, :fun, :c_sat, :graba ,:isr ,:issemym );";
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->bindParam(':nombre',$nombre,PDO::PARAM_STR);
 			$this->stmt->bindParam(':tipo',$tipo,PDO::PARAM_INT);
@@ -1174,6 +1587,10 @@ class UAAModel extends Connection
 			$this->stmt->bindParam(':cond',$condicion,PDO::PARAM_INT);
 			$this->stmt->bindParam(':fun',$funcion,PDO::PARAM_INT|PDO::PARAM_BOOL);
 			$this->stmt->bindParam(':c_sat',$c_sat,PDO::PARAM_INT|PDO::PARAM_BOOL);
+
+			$this->stmt->bindParam(':graba',$graba,PDO::PARAM_INT|PDO::PARAM_BOOL);
+			$this->stmt->bindParam(':isr',$isr,PDO::PARAM_INT|PDO::PARAM_BOOL);
+			$this->stmt->bindParam(':issemym',$issemym,PDO::PARAM_INT|PDO::PARAM_BOOL);
 			$this->stmt->execute();
 			$alerta = array( 'status'=>'success','message'=>'EL REGISTRO A SIDO GUARDADO DE MANERA EXITOSA.' );
 			return json_encode( $alerta );
@@ -1922,12 +2339,25 @@ class UAAModel extends Connection
 		try {
 			$quincena = $_POST['quincenas'];
 			$year = $_POST['year'];
+			$c = $_POST['cuenta'];
+			$inner = "";
+			$wh = "";
+			if ( $c == '1' ) {
+				$wh .= " AND b.banco = 1";
+			}elseif($c == '2'){
+				$wh .= " AND b.banco != 1 ";
+			}elseif ($c == '3') {
+				$inner = " INNER JOIN pensiones AS pen ON pen.personal_id =  p.id  ";
+			}
 			$this->sql = "
 			SELECT p.id, CONCAT(p.nombre,' ',p.ap_pat, ' ', p.ap_mat) AS full_name,
 			b.clave 
 			FROM  personal  AS p
 			INNER JOIN ibanco_sp AS b ON b.personal_id =  p.id
+			$inner
+			WHERE 1=1
 			";
+			#echo $this->sql;exit;
 			$this->stmt = $this->pdo->prepare($this->sql);
 			$this->stmt->execute();
 			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
@@ -2074,6 +2504,82 @@ class UAAModel extends Connection
 			}
 			
 			return json_encode(array('status' =>'success', 'data' => $data ));
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getReglas()#Recuperar  las reglas aplicadas a servidores publicos
+	{
+		try {
+			$anexgrid = new AnexGrid();
+			$wh = "";
+			foreach ($anexgrid->filtros as $filter) {
+				if ( $filter['columna'] != '' ) {
+					if ( $filter['columna'] == 'full_name') {
+						$wh .= " AND CONCAT(p.nombre,' ',p.ap_pat,' ',p.ap_mat) LIKE '%".$filter['valor']."%'";
+					}elseif($filter['columna'] == 'pd.nombre'){
+						$wh .= " AND ".$filter['columna']." LIKE '%".$filter['valor']."%'";
+					}else{
+						$wh .= " AND ".$filter['columna']." = ".$filter['valor'];
+					}
+				}
+			}
+
+			$this->sql = "
+			SELECT r.*, CONCAT(p.nombre,' ',p.ap_pat,' ',p.ap_mat) AS full_name, pd.nombre AS pd_name
+			FROM reglas AS r
+			INNER JOIN personal AS p ON p.id = r.personal_id
+			INNER JOIN per_ded AS pd ON pd.id = r.pd_id
+			WHERE 1=1 $wh ORDER BY $anexgrid->columna $anexgrid->columna_orden LIMIT $anexgrid->pagina , $anexgrid->limite";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			$total = 0;
+			$this->sql = "SELECT COUNT(*) AS total FROM reglas AS r
+			INNER JOIN personal AS p ON p.id = r.personal_id
+			INNER JOIN per_ded AS pd ON pd.id = r.pd_id
+			WHERE 1=1 $wh";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->execute();
+			$total = $this->stmt->fetch(PDO::FETCH_OBJ)->total;
+			return $anexgrid->responde($this->result,$total);
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getReglasArray($sp)#Recuperar  las reglas aplicadas a servidores publicos
+	{
+		try {
+			$this->sql = "
+			SELECT r.*, pd.nombre AS pd_name, pd.id AS pd_id, pd.g_isr
+			FROM reglas AS r
+			INNER JOIN personal AS p ON p.id = r.personal_id
+			INNER JOIN per_ded AS pd ON pd.id = r.pd_id
+			WHERE  p.id = :sp";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':sp',$sp ,PDO::PARAM_INT);
+			//$this->stmt->bindParam(':', ,PDO::PARAM_INT);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetchAll(PDO::FETCH_OBJ);
+			
+			return $this->result;
+		} catch (Exception $e) {
+			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
+		}
+	}
+	public function getInfoQuincena($q)#Recuperar  las reglas aplicadas a servidores publicos
+	{
+		try {
+			$this->sql = "
+			SELECT *, CONCAT( dia_ini,'-',num_mes,'-',YEAR(NOW()) ) AS fecha_ini,
+			CONCAT( dia_fin,'-',num_mes,'-',YEAR(NOW()) ) AS fecha_fin   
+			FROM catalogo_quincenas WHERE id = :id ";
+			$this->stmt = $this->pdo->prepare($this->sql);
+			$this->stmt->bindParam(':id',$q ,PDO::PARAM_INT);
+			$this->stmt->execute();
+			$this->result = $this->stmt->fetch(PDO::FETCH_OBJ);
+			
+			return json_encode($this->result);
 		} catch (Exception $e) {
 			return json_encode( array('status' =>'error', 'message' => $e->getMessage() ) );
 		}

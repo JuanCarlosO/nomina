@@ -2,6 +2,7 @@
 /**
  * Calculadora de financiera
  */
+include_once 'UAAModel.php';
 class CalculadoraModel
 {
 	private $sueldob;
@@ -95,6 +96,29 @@ class CalculadoraModel
 			$r = $r1 - $r2;
 			$result = array('status' => 'success', 'value'=> $r);
 			return $result;
+		} catch (Exception $e) {
+			return $result = array('status' => 'error', 'value'=> $e);
+		}
+	}
+	#Calculo de ISR
+	public function getISR($total)
+	{
+		try {
+			$uaa = new UAAModel;
+			$prom_men = (($total/15.2)*30.4);
+			#buscar el promedio mensual en el tabulador
+			$tabulador = $uaa->getItemTabulador( $prom_men );
+			
+			$lim_inf = $tabulador->limite_inf1;
+			$porcentaje = $tabulador->porce_excedente;
+			$cuota_f = $tabulador->cuota_fija;
+			$subsidio = $tabulador->subsidio;
+			$excedente = $prom_men - $lim_inf;
+			$imp_marg = (($excedente * $porcentaje) / 100) ;
+			$isr_determ = $imp_marg + $cuota_f;
+			$isr_prom = $isr_determ - $subsidio ;
+			$isr_per = (($isr_prom / 30.4) * 15.2);
+			return $isr_per;
 		} catch (Exception $e) {
 			return $result = array('status' => 'error', 'value'=> $e);
 		}

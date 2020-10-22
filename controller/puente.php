@@ -7,6 +7,7 @@ spl_autoload_register(function ($class) {
 $u = new UserController();
 $uaa = new UAAController();
 /***/
+
 if ( isset($_POST['option']) ) {
 	$o = $_POST['option'];
 	switch ( $o ) {
@@ -104,7 +105,22 @@ if ( isset($_POST['option']) ) {
 			}
 			
 			break;	
-					
+		case '22':
+			echo $uaa->saveJustificante();
+			break;		
+		case '23':
+			echo $uaa->savePagoGlobal();
+			break;		
+		case '24':
+			echo $uaa->saveItemTabulador();
+			break;		
+		case '25':
+			echo $uaa->editItemTabulador();
+			break;		
+		case '26':
+			echo $uaa->editRegistroES();
+			break;		
+			
 		default:
 			echo json_encode(array( 'status'=>'error','message'=>'NO SE A DEFINIDO LA OPCIÓN DEL MÉTODO A LA QUE DESEA ACCEDER SU FORMULARIO <br> INFORME ESTE PROBLEMA A DESARROLLO DE SISTEMAS (ext: 129).' ));
 			break;
@@ -136,8 +152,13 @@ if ( isset($_POST['option']) ) {
 		case '7':
 			echo $uaa->getQuincenaPagada();
 			break;
-		
-			
+		case '8':
+			echo $uaa->getReglas();
+			break;
+		case '9':
+			echo $uaa->getTabulador();
+			break;
+					
 		default:
 			echo json_encode( array("status"=>'error','message'=>'La ruta seleccionada no existe. Verifique con el Depto. de Desarrollo de Sistemas.') );
 			break;

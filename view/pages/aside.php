@@ -36,8 +36,8 @@
 					<li id="option_2_1" class=""><a href="index.php?menu=asistencia"><i class="fa fa-pencil"></i> Registro  </a></li>
 					<li id="option_2_4" class=""><a href="index.php?menu=ver_asistencia"><i class="fa fa-list"></i> Ver listado  </a></li>
 					
-					<li id="option_2_2"><a href="index.php?menu=retardos"><i class="fa fa-clock-o"></i> Retardos </a></li>
-					<li id="option_2_3"><a href="index.php?menu=h_asistencia"><i class="fa fa-history"></i> Historico </a></li>
+					<!-- <li id="option_2_2"><a href="index.php?menu=retardos"><i class="fa fa-clock-o"></i> Retardos </a></li>
+					<li id="option_2_3"><a href="index.php?menu=h_asistencia"><i class="fa fa-history"></i> Historico </a></li> -->
 				</ul>				
 			</li>
 			<li id="option_3" class=" treeview">
@@ -52,6 +52,7 @@
 					<li id="option_3_2" class=""><a href="index.php?menu=add_pd"><i class="fa fa-plus"></i> Alta Percep./Deduc.  </a></li>
 					<li id="option_3_3" class=""><a href="index.php?menu=add_regla"><i class="fa fa-star"></i> Aplicar reglas  </a></li>
 					<li id="option_3_4" class=""><a href="index.php?menu=quincenas_p"><i class="fa fa-cc-visa"></i> Quincenas pagadas  </a></li>
+					<li id="option_3_5" class=""><a href="index.php?menu=tabulador"><i class="fa fa-table"></i> Tabulador de ISR  </a></li>
 				</ul>				
 			</li>
 			<li id="option_4" class=" treeview">

@@ -68,8 +68,10 @@ function getURL(url) {
 		load_catalogo('quincenas','c_quincenas','select','');
 		$('#quincenas').change(function(e) {
 			e.preventDefault();
-			registro_asistencia($(this).val());
+			registro_asistencia( $('#year').val(), $(this).val());
 		});
+		form_smart('frm_add_justificante',true,false,'alerta_justificante');
+		form_smart('frm_editar_res',false,false,'alerta_res');
 	}
 	
 	if ( url == '?menu=pagar' ) {
@@ -102,6 +104,14 @@ function getURL(url) {
 				$('#div_funciones').addClass('hidden');
 			}
 		});
+		$('#graba').change(function(e) {
+			e.preventDefault();
+			if ($(this).val() == 1 ) {
+				$('#grabables').removeClass('hidden')
+			}else if($(this).val() == 2){
+				$('#grabables').addClass('hidden')
+			}
+		});
 		
 		form_smart('frm_add_pd',false,false,'alerta_pd');
 	}
@@ -111,6 +121,7 @@ function getURL(url) {
 		autocompletado('name_sp','sp_id');
 		change('t_concepto','per_ded','concepto');
 		form_smart('frm_add_regla',false,false,'alerta_regla');
+		getReglas();
 	}
 	if ( url == '?menu=quincenas_p' ) {
 		$('#option_3').addClass('active');		
@@ -134,6 +145,32 @@ function getURL(url) {
 		$('#option_1_3 ').addClass('active');
 		form_smart('frm_add_nivel',false,false,'nivel_rango');
 		getNivelesRangos();
+		$('#t_rango').change(function(e) {
+			e.preventDefault();
+			if ($(this).val() >= '4' && $(this).val() < '7') {
+				$('#sb').removeClass('hidden');
+				$('#grat').removeClass('hidden');
+				$('#forta').removeClass('hidden');
+				$('#despensa').removeClass('hidden');
+				$('#tb').removeClass('hidden');
+				$('#tot_bru').val('0.00');
+			}else if($(this).val() == '1' || $(this).val() == '2' || $(this).val() == '7'){
+				$('#sb').removeClass('hidden');
+				$('#grat').removeClass('hidden');
+				$('#forta').addClass('hidden'); $('#for').val('');
+				$('#despensa').addClass('hidden');$('#des').val('');
+				$('#tb').removeClass('hidden');
+				$('#tot_bru').val('0.00');
+			}else if($(this).val() == '3'){
+				$('#sb').removeClass('hidden');
+				$('#grat').addClass('hidden');$('#gra').text('');
+				$('#forta').removeClass('hidden');
+				$('#despensa').removeClass('hidden');
+				$('#tb').removeClass('hidden');$('#tot_bru').val('');
+				
+			}
+		});
+
 	}
 	if ( url == '?menu=add_fump' ) {
 		$('#option_1').addClass('active');		
@@ -168,6 +205,16 @@ function getURL(url) {
 		load_catalogo('quincenas','c_quincenas','select','');
 		frm_dispersion();
 	}
+	if ( url == '?menu=validation_full' ) {
+		form_smart('frm_save_pago',false,false,'alerta_pagar');
+	}
+	if ( url == '?menu=tabulador' ) {
+		$('#option_3').addClass('active');		
+		$('#option_3_5 ').addClass('active');
+		getTabulador();
+		form_smart('frm_add_tabulador',false,false,'alerta_tablero');
+		form_smart('frm_editar_tab',false,false,'alerta_tab');
+	}
 	
 	
 	return false;
@@ -196,7 +243,7 @@ function getPersonal() {
 	        { leyenda: 'Estado',class:'text-center', columna:'p.estado',ordenable:false,filtro:function(){
 	        	return anexGrid_select({
 	        		data:[
-		        		{valor:'',contenido:'TODOS'},
+		        		{valor:'', contenido:'TODOS'},
 		        		{valor:'1',contenido:'ACTIVOS'},
 		        		{valor:'2',contenido:'INACTIVOS'},
 		        		{valor:'3',contenido:'BAJAS'}
@@ -213,6 +260,7 @@ function getPersonal() {
                     target: '_blank',
                     id: 'editar-' + obj.id,
                     data: acciones = [
+	    				{ href: "index.php?menu=ver_fump&fump_id="+obj.id, contenido: '<i class="fa fa-eye"></i>Ver F.U.M.P.' },
 	    				{ href: "index.php?menu=add_fump&fump_id="+obj.id, contenido: '<i class="fa fa-pencil"></i>Completar F.U.M.P.' },
 	    				//{ href: "index.php?menu=cedula&persona_id="+obj.id, contenido: '<i class="glyphicon glyphicon-eye-open "></i>Ver F.U.M.P.' },
 	    				//{ href: "index.php?menu=edit_fump&person="+obj.id, contenido: '<i class="glyphicon glyphicon-cloud"></i> Editar F.U.M.P.' },
@@ -278,34 +326,23 @@ function getPersonal() {
 	return tabla;
 }
 //ver el registro de asistencia 
-function registro_asistencia(quincena) {
+function registro_asistencia(y,quincena) {
 	//console.log(quincena);
 	var datos = {
 	    class: 'table-striped table-bordered table-hover border-table',
 	    columnas: [
-	    	{ leyenda: 'Acciones', class:'text-center',ordenable:false},
 	        { leyenda: 'Núm. tarjeta', class:'text-center',ordenable:true,columna:'p.num_tarjeta', filtro:true, style:'width:100px;'},
 	        { leyenda: 'Nombre_completo',class:'text-center', columna:'full_name',ordenable:false,filtro:true},
 	        { leyenda: 'Fecha de asistencia',class:'text-center', columna:'r.f_asistencia',ordenable:false,filtro:true},
 	        { leyenda: 'Registro de asistencia',class:'text-center', columna:'name_area',ordenable:false,filtro:false},
+	        { leyenda: 'Justificar',class:'text-center', columna:'name_area',ordenable:false,filtro:false, style:'width:30px;'},
+	        { leyenda: 'Editar',class:'text-center', columna:'',ordenable:false,filtro:false, style:'width:30px;'},
 	    ],
 	    modelo: [
-	    	{ class:'',formato: function(tr, obj, valor){
-	            return anexGrid_dropdown({
-                    contenido: '<i class="glyphicon glyphicon-cog"></i>',
-                    class: 'btn btn-primary opciones',
-                    target: '_blank',
-                    id: 'editar-' + obj.id,
-                    data: acciones = [
-	    				//{ href: "index.php?menu=add_fump&fump_id="+obj.id, contenido: '<i class="fa fa-pencil"></i>Completar F.U.M.P.' },
-	    				//{ href: "javascript:open_modal('modal_add_file',"+obj.id+");", contenido: '<i class="fa fa-edit"></i> Adjuntar documento' },
-                    ]
-                });
-	        }}, 
+	    	 
 	        {class:'text-center ',style:'color: black;', formato: function(tr, obj, valor){
 	            return obj.num_tarjeta;
-	        }}, 
-	        
+	        }}, 	        
 	        {class:'text-center',style:'color: black;', formato: function(tr, obj, valor){
 	            return obj.full_name;
 	        }}, 
@@ -314,9 +351,9 @@ function registro_asistencia(quincena) {
 	        }}, 
 	        {class:'text-center',style:'color: black;', formato: function(tr, obj, valor){
 	        	var sph_salida;var estado; var diff; 
-
 	        	if ( obj.h_salida === null ) {
 	        		sph_salida = "TIENE FALTA.";
+	        		tr.addClass('bg-red');
 	        	}else{
 	        		sph_salida = obj.h_salida;
 	        	}
@@ -327,10 +364,17 @@ function registro_asistencia(quincena) {
 				var he_retardo = moment('09:11:00','HH:mm:ss');
 				var he_retardo_l = moment('09:30:00','HH:mm:ss');//Hora de retardo limite 
 				var he_falta = moment('09:31:00','HH:mm:ss');//Hora de entrada con falta
-				if (/*he.isBefore(hora_e) || ||*/he.isSameOrBefore(hora_e) ) {
+				if ( (obj.h_salida !== null && obj.justificado === 'SI') || (obj.justificado === 'SI' && he.isSame('00:00:00')) ){
+					estado = 'HORARIO JUSTIFICADO';
+					tr.addClass('bg-green');
+				}else if (/*he.isBefore(hora_e) || ||*/he.isSameOrBefore(hora_e) && obj.h_salida !== null ) {
+					estado = 'OK';
+					tr.addClass('bg-green');
+				}else if ((obj.h_salida !== null) && obj.justificado == 'SI' ){
 					estado = 'OK';
 					tr.addClass('bg-green');
 				}else{
+
 					if( he.isSameOrBefore(he_tolerancia) && he.isAfter(hora_e)){
 						estado = 'NO HAY RETARDO, NO HAY PREMIO.';
 						tr.addClass('bg-aqua');
@@ -349,6 +393,28 @@ function registro_asistencia(quincena) {
 				}	        	
 	            return "ENTRADA: <b>"+obj.h_entrada+"</b> SALIDA: <b>"+sph_salida+"</b><br> <b>"+estado+"</b>";
 	        }}, 
+	        { class:'',formato: function(tr, obj, valor){
+	        	tr.addClass('text-center');
+	    		var he = moment(obj.h_entrada, 'HH:mm:ss');
+	    		var he_falta = moment('09:31:00','HH:mm:ss');//Hora de entrada con falta
+	    		if ( (obj.h_salida === null && obj.justificado === 'NO') || (obj.justificado === 'NO' && he.isSame('00:00:00')) ) {
+	    			return anexGrid_boton({
+	    				contenido: '<i class="fa fa-cloud-upload"></i>',
+	    				class: 'btn btn-primary btn-justificar',
+	    				value: tr.data('fila')
+	    			});
+	        	}
+	            
+	        }},
+	        { class:'',formato: function(tr, obj, valor){
+	        	tr.addClass('text-center');
+	    		return anexGrid_boton({
+    				contenido: '<i class="fa fa-pencil"></i>',
+    				class: 'btn btn-primary btn-editar',
+    				value: tr.data('fila')
+    			});
+	            
+	        }},
 	    ],
 	    url: 'controller/puente.php?option=6',
 	    columna: 'id',
@@ -358,10 +424,24 @@ function registro_asistencia(quincena) {
 	    paginable:true,
 	    limite:[25,50,100,200,500],
 	    filtrable:true,
-	    parametros: [{q:quincena}]
-	    
+	    parametros: [{q:quincena},{y:y}]
 	};
 	var tabla = $("#tbl_registro").anexGrid(datos);
+	tabla.tabla().on('click', '.btn-justificar', function(){
+		var obj = tabla.obtener($(this).val());
+		$('#registro_id').val(obj.r_id);
+		open_modal('modal_add_justificante');
+
+	});
+	tabla.tabla().on('click', '.btn-editar', function(){
+		var obj = tabla.obtener($(this).val());
+		console.log(obj);
+		$('#name_sp').text(obj.full_name);
+		$('#h_entrada').val(obj.h_entrada);
+		$('#h_salida').val(obj.h_salida);
+		$('#e_registro_id').val(obj.r_id);
+		open_modal('modal_editar_res');
+	});
 	return tabla;
 }
 //funcion para abrir modal 
@@ -552,6 +632,7 @@ function form_smart(frm,upFile,multiple,d_alerta) {
 		.done(function(response) {
 			alerta(d_alerta,response.status,response.message,'');
 			if ( frm == 'frm_add_pd' ) { getPerDed(); }
+			if ( frm == 'frm_add_tabulador' ||  frm == 'frm_editar_tab') { getTabulador(); }
 		})
 		.fail(function(jqXHR,textStatus,errorThrown) {
 			alerta(d_alerta,'error',jqXHR.responseText,'');
@@ -661,6 +742,75 @@ function getPerDed() {// Recuperar las percepciones y deducciones
 	tabla.tabla().on('click', '.btn-editar', function(){
 		var obj = tabla.obtener($(this).val());
 		open_modal('modal_editar_pd');
+	});
+	return tabla;
+}
+function getTabulador() {// Recuperar las percepciones y deducciones
+	var datos = {
+	    class: 'table-bordered table-hover',
+	    columnas: [
+	        { leyenda: 'ID', class:'text-center',ordenable:true,columna:'id'},
+	        { leyenda: 'Limite inferior 1',class:'text-center', columna:'limite_inf1',ordenable:true,filtro:false},
+	        { leyenda: 'Limite inferior 2',class:'text-center', columna:'limite_inf2',ordenable:true,filtro:false},
+	        { leyenda: 'Limite superior',class:'text-center', columna:'limite_sup',ordenable:true,filtro:false},
+	        { leyenda: 'Cuota fija',class:'text-center', columna:'couta_fija',ordenable:true,filtro:false},
+	        { leyenda: 'Por ciento sobre excedente',class:'text-center', columna:'porce_excedente',ordenable:true,filtro:false},
+	        { leyenda: 'Subsidio para el empleo',class:'text-center', columna:'subsidio',ordenable:true,filtro:false},
+	        { leyenda: 'Editar',class:'text-center', columna:'subsidio',ordenable:true,filtro:false},
+	    ],
+	    modelo: [
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.id;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.limite_inf1;
+	        }},
+	        {class:'text-center', formato: function(tr, obj, valor){
+	        	return obj.limite_inf2;
+	        }},
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.limite_sup;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.cuota_fija;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.porce_excedente;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.subsidio;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	        	var valor = tr.data('fila');
+	            return anexGrid_boton({
+	            	type:'submit',
+	            	value: valor,
+	            	contenido: '<i class="fa fa-pencil"></i>',
+	            	class: 'btn btn-primary btn-flat btn-editar',
+	            	attr:['title="MODIFICAR ESTE REGISTRO"']
+	            });
+	        }}, 
+	    ],
+	    url: 'controller/puente.php?option=9',
+	    columna: 'id',
+	    columna_orden: 'DESC',
+	    ordenable: true,
+	    type:'POST',
+	    paginable:true,
+	    limite:[25,50,100,200,500],
+	    filtrable:true
+	};
+	var tabla = $("#tbl_tabulador").anexGrid(datos);
+	tabla.tabla().on('click', '.btn-editar', function(){
+		var obj = tabla.obtener($(this).val());
+		$('#option_tab').val(obj.id);
+		$('#e_li1').val(obj.limite_inf1);
+		$('#e_li2').val(obj.limite_inf2);
+		$('#e_ls').val(obj.limite_sup);
+		$('#e_cf').val(obj.cuota_fija);
+		$('#e_pe').val(obj.porce_excedente);
+		$('#e_se').val(obj.subsidio);
+		open_modal('modal_editar_tabulador');
 	});
 	return tabla;
 }
@@ -1207,12 +1357,12 @@ function frm_reporte_timbre() {
 		if ( $(this).val() == '3' ) {
 			$('#div_sat_ded').addClass('hidden');
 			$('#div_sat_per').addClass('hidden');
-			$('#div_sat_otros').addClass('hidden');
+			$('#div_sat_otros').removeClass('hidden');
 		}
 		
 		if ($(this).val() == '4' ) {
 			$('#div_xml').removeClass('hidden');
-			$('#div_sat_otros').removeClass('hidden');
+			$('#div_sat_emp').removeClass('hidden');
 			$('#div_sat_ded').addClass('hidden');
 			$('#div_sat_per').addClass('hidden');
 		}else{
@@ -1362,6 +1512,7 @@ function frm_dispersion() {
 			cache: false,
 		})
 		.done(function(response) {
+			$('#tbl_dispersion tbody').html("")
 			$.each(response.data, function(i, val) {
 				var fila = "";
 				fila += "<tr>";
@@ -1437,7 +1588,7 @@ function frm_osfem() {
 							fila += "<td>0</td>";
 						}
 					});
-					fila += "<td id='bruto_"+i+"'>"+bruto+"</td>";
+					fila += "<td id='bruto_"+i+"'>"+bruto.toFixed(2)+"</td>";
 					
 					$.each(response.data.deducciones_sp, function(a, valor) {
 						if ( val.deducciones_sp != null ) {
@@ -1452,7 +1603,7 @@ function frm_osfem() {
 							fila += "<td>0</td>";
 						}
 					});
-					fila += "<td id='deducciones_"+i+"'>"+deducciones+"</td>";
+					fila += "<td id='deducciones_"+i+"'>"+deducciones.toFixed(2)+"</td>";
 					neto = bruto - deducciones;
 					neto = neto.toFixed(2);
 					fila += "<td id='neto_"+i+"'>"+neto+"</td>";
@@ -1488,4 +1639,113 @@ function load_cat_sat(catalogo) {
 	});
 	
 	return false;
+}
+function getReglas() {
+	var datos = {
+	    class: 'table-striped table-bordered table-hover border-table',
+	    columnas: [
+	        { leyenda: 'ID', class:'text-center',ordenable:true,columna:'id'},
+	        { leyenda: 'Aplicado a',class:'text-center', columna:'full_name',ordenable:true,filtro:true},
+	        { leyenda: 'Núm. de quincenas',class:'text-center', columna:'r.n_quin',ordenable:true,filtro:true},
+	        { leyenda: 'Período',class:'text-center', columna:'r.f_ini',ordenable:true,filtro:true},
+	        { leyenda: 'Percepción/Deducción',class:'text-center', columna:'r.tipo_pd',ordenable:true,filtro:function(){
+	        	return anexGrid_select({
+	        	    data: [
+							{ valor: '', contenido: 'Todos' },
+							{ valor: '1', contenido: 'Percepción' },
+							{ valor: '2', contenido: 'Deducción' },
+        	            ]
+        	    });
+	        }},
+	        { leyenda: 'Concepto',class:'text-center', columna:'pd.nombre',ordenable:true,filtro:true},
+	        { leyenda: 'Monto quincenal',class:'text-center', columna:'monto',ordenable:false,filtro:false},
+	        { leyenda: 'Eliminar',class:'text-center', columna:'',ordenable:false,filtro:false},
+	    ],
+	    modelo: [
+	    	 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.id;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.full_name;
+	        }}, 
+	        {class:'text-left', formato: function(tr, obj, valor){
+	        	if ( obj.n_quin == '' || obj.n_quin == null ) {
+	        		return 'NO DEFINIDO';
+	        	}else{
+	        		return obj.n_quin;
+	        	}
+	            
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	        	if ( obj.f_ini != null && obj.f_fin != null ) {
+	        		return "DE "+obj.f_ini+" A "+obj.f_fin;
+	        	}else{
+	        		return "NO SE REGISTRO";
+	        	}
+	            
+	        }}, 
+	        {class:'text-left', formato: function(tr, obj, valor){
+                return obj.tipo_pd;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.pd_name;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	            return obj.monto;
+	        }}, 
+	        {class:'text-center', formato: function(tr, obj, valor){
+	           return anexGrid_boton({
+    				contenido: '<i class="fa fa-trash"></i>',
+    				class: 'btn btn-danger btn-flat btn-eliminar',
+    				value: tr.data('fila')
+    			});
+	        }}, 
+	        
+	    ],
+	    url: 'controller/puente.php?option=8',
+	    columna: 'p.id',
+	    columna_orden: 'DESC',
+	    ordenable: true,
+	    type:'POST',
+	    paginable:true,
+	    limite:[25,50,100,200,500],
+	    filtrable: true
+	};
+	var tabla = $("#tbl_reglas").anexGrid(datos);
+	tabla.tabla().on('click', '.btn-eliminar', function(){
+		var obj = tabla.obtener($(this).val());
+		console.log(obj);
+		eliminar_regla(obj.id);
+	})
+	return tabla;
+}
+
+function getBruto() {
+	var sb =  ($('#su_ba').val() !== '') ? $('#su_ba').val() : 0 ;
+	var gra = ($('#gra').val() !== '') ? $('#gra').val() : 0 ;
+	var fo = ($('#for').val() !== '') ? $('#for').val() : 0 ;
+	var des = ($('#des').val() !== '') ? $('#des').val() : 0 ;
+	var tb = 0;
+	tb = parseFloat(sb) +parseFloat(gra) +parseFloat(fo) +parseFloat(des) ;
+	$('#tot_bru').val(tb);
+	$('#tot_bru').text( tb.toFixed(2) );
+	return false;
+}
+function eliminar_regla(id) {
+	$.ajax({
+		url: 'controller/puente.php',
+		type: 'POST',
+		dataType: 'json',
+		data: {option: '27'id:id},
+		cache:false,
+		async:false
+	})
+	.done(function(response) {
+		alerta('alerta_lregla',response.status, response.message,'');
+	})
+	.fail(function(jqXHR,textStatus,errorThrown) {
+		console.log("Error: "+jqXHR.responseText);
+	});
+	
 }

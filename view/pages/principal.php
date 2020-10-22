@@ -40,7 +40,8 @@ if ( isset($_GET['menu']) ) {
 					include 'view/pages/uaa/content_header/header_ver_a.php';
 					include 'view/pages/uaa/content_main/content_ver_a.php';
 					#Seccion de modal
-					#include 'view/pages/uaa/modals/modal_add_doc.php';
+					include 'view/pages/uaa/modals/modal_add_justificante.php';
+					include 'view/pages/uaa/modals/modal_editar_res.php';#editar registro de entrada y salida
 					break;
 					
 				case 'retardos':#
@@ -105,15 +106,24 @@ if ( isset($_GET['menu']) ) {
 					include 'view/pages/uaa/content_header/header_dispersion.php';
 					include 'view/pages/uaa/content_main/content_dispersion.php';
 					break;
-				case 'dispersion':
-					include 'view/pages/uaa/content_header/header_dispersion.php';
-					include 'view/pages/uaa/content_main/content_dispersion.php';
-					break;
 				case 'quincenas_p':
 					include 'view/pages/uaa/content_header/header_quincenas_p.php';
 					include 'view/pages/uaa/content_main/content_quincenas_p.php';
 					break;
-					
+				case 'validation_full':
+					include 'view/pages/uaa/content_header/header_validation_full.php';
+					include 'view/pages/uaa/content_main/content_validation_full.php';
+					break;
+				case 'tabulador':
+					include 'view/pages/uaa/content_header/header_tabulador.php';
+					include 'view/pages/uaa/content_main/content_tabulador.php';
+					include 'view/pages/uaa/modals/modal_edit_tabulador.php';
+					break;
+				case 'ver_fump':
+					include 'view/pages/uaa/content_header/header_ver_fump.php';
+					include 'view/pages/uaa/content_main/content_ver_fump.php';
+					break;
+									
 				default:
 					header("Location: ../../login.php");
 					break;

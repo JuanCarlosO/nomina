@@ -7,7 +7,8 @@
                 </div>
                 <div class="box-body">
                     <div id="p_nomina"></div>
-                    <form action="" id="frm_inicio_pago" method="post"  >
+                    <!-- <form action="#" id="frm_inicio_pago" method="post"  > -->
+                    <form action="index.php?menu=validation_full" id="frm_validar_pago" method="post"  target="_blank">
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
@@ -15,7 +16,7 @@
                                     <select name="c_quincena" id="c_quincena" class="form-control" required=""></select>
                                 </div>      
                             </div>
-                            <div class="col-md-4">
+                            <!-- <div class="col-md-4">
                                 <div class="form-group">
                                     <label>Pagar a </label>
                                     <select name="a_pago" id="a_pago" class="form-control" required="">
@@ -27,16 +28,16 @@
                                         <option value="5">Personal de estructura aplicando los mismos criterios</option>
                                     </select>
                                 </div>      
-                            </div>  
+                            </div>  --> 
                         </div>
                         <div class="row">
-                            <div class="col-md-3"></div>
+                            
                             <div class="col-md-3">
                                 <button type="submit" class="btn btn-success btn-flat btn-block">
                                     <i class="fa fa-floppy-o"></i> Iniciar proceso
                                 </button>
                             </div>
-                            <div class="col-md-6"></div>
+                            <div class="col-md-9"></div>
                         </div>
                     </form>
                     

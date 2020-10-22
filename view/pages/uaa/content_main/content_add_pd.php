@@ -102,6 +102,37 @@
                                     </select>
                                 </div>
                             </div>
+                            <div class="col-md-1">
+                                <div class="form-group">
+                                    <label>¿Graba?</label>
+                                    <select name="graba" id="graba" class="form-control" required>
+                                        <option value="">...</option>
+                                        <option value="1">SI</option>
+                                        <option value="2">NO</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div id="grabables" class="hidden">
+                                <div class="col-md-1">
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input type="checkbox" name="isr" value="1">
+                                                ISR
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-1">
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input type="checkbox" name="issemym" value="1"> ISSEMYM
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>                            
                         </div>
 	                    <div class="row">
 	                    	<div class="col-md-4"></div>

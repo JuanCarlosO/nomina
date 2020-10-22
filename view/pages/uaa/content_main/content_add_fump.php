@@ -98,7 +98,7 @@
                                         <tr>
                                             <th width="150px">No. de plaza: </th>
                                             <td>
-                                                <select name="n_plaza" class="form-control" required="">
+                                                <select id="n_plaza" name="n_plaza" class="form-control" required="">
                                                     <option value="">...</option>
                                                 </select>
                                             </td>
@@ -148,6 +148,29 @@
                         </fieldset>
                         <fieldset>
                             <legend>PERCEPCIONES</legend>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Concepto</label>
+                                        <select name="percepiones[]" id="" class="form-control percepciones" >
+                                            <option value="1">SUELDO BASE</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Importe</label>
+                                        <div class="input-group">
+                                            <span class="input-group-addon">
+                                                <i class="fa fa-dollar"></i>
+                                            </span>
+                                            <input type="text" name="per_importe[]" class="form-control" placeholder="">
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-md-3">
                                     <div class="form-group">
@@ -210,49 +233,51 @@
                         <fieldset>
                             <legend>RADICACIÓN DEL PAGO</legend>
                             <div class="row">
-                                <div class="col-md-1" >
+                                <div class="col-md-3" >
                                     <div class="form-group">
                                         <label>MPIO. A</label>
                                         <input type="text" class="form-control" name="mpioa">
                                     </div>
                                 </div>
-                                <div class="col-md-1" >
+                                <div class="col-md-3" >
                                     <div class="form-group">
                                         <label>MPIO. P</label>
                                         <input type="text" class="form-control" name="mpiop">
                                     </div>
                                 </div>
-                                <div class="col-md-1" >
+                                <div class="col-md-3" >
                                     <div class="form-group">
                                         <label>L.P.</label>
                                         <input type="text" class="form-control" name="lp">
                                     </div>
                                 </div>
-                                <div class="col-md-1" >
+                            </div>
+                            <div class="row">
+                                
+                                <div class="col-md-3" >
                                     <div class="form-group">
                                         <label>C.C.T.</label>
                                         <input type="text" class="form-control" name="cct_rp">
                                     </div>
                                 </div>
-                                <div class="col-md-1" >
+                                <div class="col-md-3" >
                                     <div class="form-group">
                                         <label>S.P.</label>
                                         <input type="text" class="form-control" name="sp_rp">
                                     </div>
                                 </div>
-                                <div class="col-md-1" >
+                                <div class="col-md-3" >
                                     <div class="form-group">
                                         <label>B.</label>
                                         <input type="text" class="form-control" name="b_rp">
                                     </div>
                                 </div>
-                                <div class="col-md-1" >
+                                <div class="col-md-3" >
                                     <div class="form-group">
                                         <label>T.P.</label>
                                         <input type="text" class="form-control" name="tp_rp">
                                     </div>
                                 </div>
-                                
                             </div>
                         </fieldset>
                         <fieldset>

@@ -3,6 +3,6 @@
 
 define('DNS', 'mysql:dbname=db_nomina;host=127.0.0.1;charset=utf8');
 define('USER_DB', 'root');
-define('PASS_DB', '');
-#define('PASS_DB', '7W+Th_+uTh2X');
+#define('PASS_DB', '');
+define('PASS_DB', '7W+Th_+uTh2X');
 ?>

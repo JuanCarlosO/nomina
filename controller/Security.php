@@ -45,6 +45,7 @@ class Security
 	public function search_data_login($user, $password)
 	{
 		try {
+			
 			$sql = "SELECT u.*,p.nombre AS name, CONCAT(p.nombre, ' ',p.ap_pat,' ',p.ap_mat) AS n_completo, a.nombre AS n_area, a.id AS area_id FROM usuarios AS u 
 			INNER JOIN personal AS p ON p.id = u.personal_id
 			INNER JOIN areas AS a ON a.id = p.area_id
@@ -53,6 +54,7 @@ class Security
 			$stmt->bindParam(1,$user);
 			$stmt->execute();
 			$res = $stmt->fetch( PDO::FETCH_OBJ );
+
 			if (empty($res)) {
 				throw new Exception("Error: El nombre de usuario no existe.", 1);				
 			}
@@ -106,6 +108,6 @@ class Security
 }
 
 /*$o = new Security;
-echo $o->encrypt_pass('james2020');*/
+echo $o->encrypt_pass('jrm2020');*/
 
 
